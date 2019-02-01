@@ -47,9 +47,14 @@ function getAssetState (options, compilation) {
     stateMap.set(compilation, state = {
       entryId: getEntryId(compilation),
       assets: Object.create(null),
-      assetNames: options && options.assetNames || Object.create(null),
+      assetNames: Object.create(null),
       assetPermissions: Object.create(null)
     });
+    if (options && options.existingAssetNames) {
+      options.existingAssetNames.forEach(assetName => {
+        state.assetNames[assetName] = true;
+      });
+    }
     /* compiler.hooks.compilation.tap("relocate-loader", compilation => {
       compilation.cache.get('/RelocateLoader/AssetPermissions/' + entryId, null, (err, _assetPermissions) => {
         if (err) console.error(err);
