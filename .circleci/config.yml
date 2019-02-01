@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:10
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Installing dependencies
+          command: yarn install
+      # - run:
+      #     name: Linting
+      #     command: yarn lint
+      - run:
+          name: Unit & integration tests
+          command: yarn test
+      - run:
+          name: Coverage
+          command: yarn test-coverage
