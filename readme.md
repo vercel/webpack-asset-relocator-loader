@@ -33,11 +33,14 @@ Any `.node` files included will also support binary relocation.
         use: {
           loader: '@zeit/webpack-asset-relocator-loader',
           options: {
-            wrapperCompatibility: false, // optional, default
-            escapeNonAnalyzableRequires: false, // optional, default
+            // optional, base folder for asset emission (eg assets/name.ext)
+            outputAssetBase: 'assets',
             // optional, a list of asset names already emitted or
             // defined that should not be emitted
             existingAssetNames: []
+            wrapperCompatibility: false, // optional, default
+            escapeNonAnalyzableRequires: false, // optional, default
+
           }
         }
       }

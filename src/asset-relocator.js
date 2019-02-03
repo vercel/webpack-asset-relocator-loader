@@ -81,15 +81,32 @@ function getEntryId (compilation) {
     }
 }
 
+function assetBase (options) {
+  const outputAssetBase = options && options.outputAssetBase;
+  if (!outputAssetBase)
+    return '';
+  if (outputAssetBase.endsWith('/') || outputAssetBase.endsWith('\\'))
+    return outputAssetBase;
+  return outputAssetBase + '/';
+}
+
+function relAssetPath (context, options) {
+  const isChunk = context._module.reasons.every(reason => reason.module);
+  const filename = isChunk && context._compilation.outputOptions.chunkFilename || context._compilation.outputOptions.filename;
+  const backtrackDepth = filename.split(/[\\/]/).length - 1;
+  return '../'.repeat(backtrackDepth) + assetBase(options);
+}
+
 module.exports = async function (content) {
   if (this.cacheable)
     this.cacheable();
   this.async();
   const id = this.resourcePath;
   if (id.endsWith('.node')) {
-    const assetState = getAssetState(getOptions(this), this._compilation);
+    const options = getOptions(this);
+    const assetState = getAssetState(options, this._compilation);
     const pkgBase = getPackageBase(this.resourcePath) || path.dirname(id);
-    await sharedlibEmit(pkgBase, assetState, this.emitFile);
+    await sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
 
     const name = getUniqueAssetName(id.substr(pkgBase.length + 1), id, assetState.assetNames);
     
@@ -97,9 +114,9 @@ module.exports = async function (content) {
       stat(id, (err, stats) => err ? reject(err) : resolve(stats.mode))
     );
     assetState.assetPermissions[name] = permissions;
-    this.emitFile(name, content);
+    this.emitFile(assetBase(options) + name, content);
 
-    this.callback(null, 'module.exports = __non_webpack_require__("./' + name + '")');
+    this.callback(null, 'module.exports = __non_webpack_require__("./' + relAssetPath(this, options) + '")');
     return;
   }
 
@@ -149,7 +166,7 @@ module.exports = async function (content) {
         outName = assetPath.substr(pkgBase.length);
       // If the asset is a ".node" binary, then glob for possible shared
       // libraries that should also be included
-      assetEmissionPromises = assetEmissionPromises.then(sharedlibEmit(pkgBase, assetState, this.emitFile));
+      assetEmissionPromises = assetEmissionPromises.then(sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile));
     }
 
     const name = assetState.assets[assetPath] ||
@@ -166,9 +183,9 @@ module.exports = async function (content) {
         )
       ]);
       assetState.assetPermissions[name] = permissions;
-      this.emitFile(name, source);
+      this.emitFile(assetBase(options) + name, source);
     });
-    return "__dirname + '/" + JSON.stringify(name).slice(1, -1) + "'";
+    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
   };
   const emitAssetDirectory = (assetDirPath) => {
     const dirName = path.basename(assetDirPath);
@@ -192,11 +209,11 @@ module.exports = async function (content) {
           )
         ]);
         assetState.assetPermissions[name + file.substr(assetDirPath.length)] = permissions;
-        this.emitFile(name + file.substr(assetDirPath.length), source);
+        this.emitFile(assetBase(options) + name + file.substr(assetDirPath.length), source);
       }));
     });
 
-    return "__dirname + '/" + JSON.stringify(name).slice(1, -1) + "'";
+    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
   };
 
   let assetEmissionPromises = Promise.resolve();
