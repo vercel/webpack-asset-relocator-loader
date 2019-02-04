@@ -155,20 +155,63 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.1.tgz#5c85d662f76fa1d34575766c5dcd6615abcd30d8"
   integrity sha512-FZdkNBDqBRHKQ2MEbSC17xnPFOhZxeJ2YGSfr2BKf3sujG49Qe3bB+rGCwQfIaA7WHnGeGkSijX4FuBCdrzW/g==
 
-"@zeit/ncc@^0.13.2":
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/@zeit/ncc/-/ncc-0.13.2.tgz#85190b66043524a043f7071ab3dffab710172005"
-  integrity sha512-0LB9qGIbSFRyBBlN7NqEcnikjUGQ/ujT6U66L/KHTeROle1I+4SlbqsAK9e8UbmqK1tGly0VyCAKAbqui2UoPQ==
+"@zeit/ncc@^0.14.1":
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/@zeit/ncc/-/ncc-0.14.0.tgz#1ac4c4555b8647a3ae1fb4f6eed95a4d2b3d418d"
+  integrity sha512-kDyiPuimSkIXgLMwudLFqFMQ2l7cCACWjGN/8HIyCGdLWGRqefmGqE903LB785PjURtEso6SX3r35FxJ6dbrrw==
 
 abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
   integrity sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==
 
+acorn-bigint@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/acorn-bigint/-/acorn-bigint-0.3.1.tgz#edb40a414dcaf5a09c2933db6bed79454b3ff46a"
+  integrity sha512-WT9LheDC4/d/sD/jgC6L5UMq4U9X3KNMy0JrXp/MdJL83ZqcuPQuMkj50beOX0dMub8IoZUYycfN7bIVZuU5zg==
+
+acorn-class-fields@^0.2.0:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/acorn-class-fields/-/acorn-class-fields-0.2.1.tgz#748058bceeb0ef25164bbc671993984083f5a085"
+  integrity sha512-US/kqTe0H8M4LN9izoL+eykVAitE68YMuYZ3sHn3i1fjniqR7oQ3SPvuMK/VT1kjOQHrx5Q88b90TtOKgAv2hQ==
+
 acorn-dynamic-import@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/acorn-dynamic-import/-/acorn-dynamic-import-4.0.0.tgz#482210140582a36b83c3e342e1cfebcaa9240948"
   integrity sha512-d3OEjQV4ROpoflsnUA8HozoIR504TFxNivYEUi6uwz0IYhBkTDXGuWlNdMtybRt3nqVx/L6XqMt0FxkXuWKZhw==
+
+acorn-export-ns-from@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/acorn-export-ns-from/-/acorn-export-ns-from-0.1.0.tgz#192687869bba3bcb2ef1a1ba196486ea7e100e5c"
+  integrity sha512-QDQJBe2DfxNBIMxs+19XY2i/XXilJn+kPgX30HWNYK4IXoNj3ACNSWPU7szL0SzqjFyOG4zoZxG9P7JfNw5g7A==
+
+acorn-import-meta@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/acorn-import-meta/-/acorn-import-meta-1.0.0.tgz#6cff1f01db3b60148934823d3d2dd0c08354aead"
+  integrity sha512-yX652u86bKzuM+mzEHV84T0R+srQwTOmprUiFC3zlhlc02lBQzqxkB/H/7jexX9vlz/TRuQiZs9mKEDK3bbmhw==
+
+acorn-private-methods@^0.2.0:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/acorn-private-methods/-/acorn-private-methods-0.2.2.tgz#25c76061154199df41cd9efb0e4dfd8890e739b2"
+  integrity sha512-yNIxzvTAdrPN/ZNc4sCQa1Juhn7soSoh58GWWYnme0Z/CFIW6RyZtSG6eMnEygFO6w1OXZdOJ8V/7H0aKbdZ4Q==
+
+acorn-stage3@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/acorn-stage3/-/acorn-stage3-1.0.0.tgz#0b3e288d697c43512aee3549b39aa0672e409384"
+  integrity sha512-7PiPkjroE9sdxMmGDSfyriB8YputoGAyhvM40f/3VRr8Dvb25DJxOtnqvEsKhAvqaKulwKTaueupGJB+8UCpnQ==
+  dependencies:
+    acorn-bigint "^0.3.1"
+    acorn-class-fields "^0.2.0"
+    acorn-dynamic-import "^4.0.0"
+    acorn-export-ns-from "^0.1.0"
+    acorn-import-meta "^1.0.0"
+    acorn-private-methods "^0.2.0"
+    acorn-static-class-features "^0.1.0"
+
+acorn-static-class-features@^0.1.0:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/acorn-static-class-features/-/acorn-static-class-features-0.1.1.tgz#dc621b0b33b904f750e2f9293aa27535e4a25d38"
+  integrity sha512-oBHlqP72RdoZNcIr/f1RpwdYRpS0mnYv8lVWS9V7CiXAOkRCJH9CLT9WGGQQ6Jtr0HG5eMyOmT8KLZaqvY2jkg==
 
 acorn@^6.0.5, acorn@^6.0.6:
   version "6.0.6"

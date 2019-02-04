@@ -4,7 +4,7 @@ const { walk } = require('estree-walker');
 const MagicString = require('magic-string');
 const { attachScopes } = require('rollup-pluginutils');
 const evaluate = require('./utils/static-eval');
-const acorn = require('acorn');
+let acorn = require('acorn');
 const bindings = require('bindings');
 const getUniqueAssetName = require('./utils/dedupe-names');
 const sharedlibEmit = require('./utils/sharedlib-emit');
@@ -14,6 +14,8 @@ const { pregyp, nbind } = require('./utils/binary-locators');
 const handleWrappers = require('./utils/wrappers');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
+const stage3 = require('acorn-stage3');
+acorn = acorn.Parser.extend(stage3);
 
 const staticPath = Object.assign({ default: path }, path);
 const staticFs = { default: { existsSync }, existsSync };
