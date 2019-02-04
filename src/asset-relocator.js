@@ -91,7 +91,7 @@ function assetBase (options) {
 }
 
 function relAssetPath (context, options) {
-  const isChunk = context._module.reasons.every(reason => reason.module);
+  const isChunk = context._module.reasons && context._module.reasons.every(reason => reason.module);
   const filename = isChunk && context._compilation.outputOptions.chunkFilename || context._compilation.outputOptions.filename;
   const backtrackDepth = filename.split(/[\\/]/).length - 1;
   return '../'.repeat(backtrackDepth) + assetBase(options);
