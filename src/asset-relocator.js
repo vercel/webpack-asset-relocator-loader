@@ -116,7 +116,7 @@ module.exports = async function (content) {
     assetState.assetPermissions[name] = permissions;
     this.emitFile(assetBase(options) + name, content);
 
-    this.callback(null, 'module.exports = __non_webpack_require__("./' + relAssetPath(this, options) + '")');
+    this.callback(null, 'module.exports = __non_webpack_require__("./' + relAssetPath(this, options) + name + '")');
     return;
   }
 
