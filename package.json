@@ -10,6 +10,7 @@
     "test": "npm run build && jest",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
+  "files": ["dist/*"],
   "devDependencies": {
     "@zeit/ncc": "^0.13.2",
     "acorn": "^6.0.6",
