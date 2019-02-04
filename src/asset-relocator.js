@@ -71,13 +71,25 @@ function getAssetState (options, compilation) {
 }
 
 function getEntryId (compilation) {
-  if (compilation.entries && compilation.entries.length)
-    return resolve.sync(compilation.entries[0].resource);
+  if (compilation.entries && compilation.entries.length) {
+    try {
+      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { filename: compilation.entries[0].context });
+    }
+    catch (e) {
+      return;
+    }
+  }
   const entryMap = compilation.entryDependencies;
   if (entryMap)
     for (entry of entryMap.values()) {
-      if (entry.length)
-        return resolve.sync(entry[0].request);
+      if (entry.length) {
+        try {
+          return resolve.sync(entry[0].request, { filename: entry[0].context });
+        }
+        catch (e) {
+          return;
+        }
+      }
     }
 }
 
