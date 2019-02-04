@@ -27,7 +27,8 @@ Any `.node` files included will also support binary relocation.
   module: {
     rules: [
       {
-        test: /\.m?js$/,
+        // For node binary relocations, include ".node" files as well here
+        test: /\.(m?js|node)$/,
         // it is recommended for Node builds to turn off AMD support
         parser: { amd: false },
         use: {
