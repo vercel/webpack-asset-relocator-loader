@@ -177,7 +177,7 @@ module.exports = async function (content) {
     if (assetPath.endsWith('.node')) {
       // retain directory depth structure for binaries for rpath to work out
       if (pkgBase)
-        outName = assetPath.substr(pkgBase.length);
+        outName = assetPath.substr(pkgBase.length).replace(/\\/g, '/');
       // If the asset is a ".node" binary, then glob for possible shared
       // libraries that should also be included
       assetEmissionPromises = assetEmissionPromises.then(sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile));
@@ -438,7 +438,8 @@ module.exports = async function (content) {
         if (bindingInfo) {
           bindingInfo.path = path.relative(path.dirname(id), bindingInfo.path);
           transformed = true;
-          magicString.overwrite(node.start, node.end, `({ bind: require("${bindingInfo.path}").NBind.bind_value, lib: require("${bindingInfo.path}") })`);
+          const bindingPath = JSON.stringify(bindingInfo.path.replace(/\\/g, '/'));
+          magicString.overwrite(node.start, node.end, `({ bind: require(${bindingPath}).NBind.bind_value, lib: require(${bindingPath}) })`);
           return this.skip();
         }
       }
