@@ -403,26 +403,43 @@ module.exports = async function (content) {
           return this.skip();
         }
       }
-      // require('bindings')('asdf')
-      else if (node.type === 'CallExpression' && !isESM &&
-          isStaticRequire(node.callee) &&
-          node.callee.arguments[0].value === 'bindings') {
-        let staticValue = computeStaticValue(node.arguments[0], true);
-        let bindingsValue;
-        if (staticValue && 'value' in staticValue)
-          bindingsValue = createBindings()(staticValue.value);
-        if (bindingsValue) {
-          staticChildValue = { value: bindingsValue };
-          staticChildNode = node;
-          staticChildValueBindingsInstance = staticBindingsInstance;
-          return this.skip();
+      // require
+      else if (!isESM && isRequire(node)) {
+        // require('bindings')('asdf')
+        if (isStaticRequire(node) &&
+            parent.type === 'CallExpression' &&
+            parent.callee === node &&
+            node.arguments[0].value === 'bindings') {
+          let staticValue = computeStaticValue(parent.arguments[0], true);
+          let bindingsValue;
+          if (staticValue && 'value' in staticValue)
+            bindingsValue = createBindings()(staticValue.value);
+          if (bindingsValue) {
+            staticChildValue = { value: bindingsValue };
+            staticChildNode = parent;
+            staticChildValueBindingsInstance = staticBindingsInstance;
+            return this.skip();
+          }
         }
-      }
-      // require(dynamic) -> __non_webpack_require__(dynamic)
-      else if (!isESM && options.escapeNonAnalyzableRequires && isRequire(node) && !isAnalyzableRequire(node.arguments[0])) {
-        transformed = true;
-        magicString.overwrite(node.callee.start, node.callee.end, "__non_webpack_require__");
-        return this.skip();
+        // require(`${__dirname}...`) -> require(`./...`)
+        else {
+          if (node.arguments[0] &&
+              node.arguments[0].type === 'TemplateLiteral' &&
+              node.arguments[0].quasis[0].value.cooked.length === 0 &&
+              node.arguments[0].expressions[0].type === 'Identifier' &&
+              node.arguments[0].expressions[0].name === '__dirname' &&
+              knownBindings.__dirname.shadowDepth === 0) {
+            transformed = true;
+            magicString.overwrite(node.arguments[0].expressions[0].start - 2, node.arguments[0].expressions[0].end + 1, '.');
+            return this.skip();
+          }
+          // dynamic require -> outer require
+          else if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(node.arguments[0])) {
+            transformed = true;
+            magicString.overwrite(node.callee.start, node.callee.end, "__non_webpack_require__");
+            return this.skip();
+          }
+        }
       }
       // nbind.init(...) -> require('./resolved.node')
       else if (nbindId && node.type === 'CallExpression' &&
