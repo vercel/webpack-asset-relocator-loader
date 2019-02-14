@@ -57,17 +57,17 @@ function getAssetState (options, compilation) {
         state.assetNames[assetName] = true;
       });
     }
-    /* compiler.hooks.compilation.tap("relocate-loader", compilation => {
-      compilation.cache.get('/RelocateLoader/AssetPermissions/' + entryId, null, (err, _assetPermissions) => {
+    compilation.compiler.hooks.compilation.tap("relocate-loader", compilation => {
+      compilation.cache.get('/RelocateLoader/AssetPermissions/' + state.entryId, null, (err, _assetPermissions) => {
         if (err) console.error(err);
         state.assetPermissions = JSON.parse(_assetPermissions || 'null') || Object.create(null);
       });
     });
-    compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
-      compilation.cache.store('/RelocateLoader/AssetPermissions/' + entryId, null, JSON.stringify(state.assetPermissions), (err) => {
+    compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
+      compilation.cache.store('/RelocateLoader/AssetPermissions/' + state.entryId, null, JSON.stringify(state.assetPermissions), (err) => {
         if (err) console.error(err);
       });
-    }); */
+    });
   }
   return lastState = state;
 }
