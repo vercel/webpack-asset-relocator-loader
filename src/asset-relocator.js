@@ -66,8 +66,6 @@ function getAssetState (options, compilation) {
 }
 
 function getEntryId (compilation) {
-  if (typeof compilation.options.entry === 'string')
-    return compilation.options.entry;
   if (compilation.entries && compilation.entries.length) {
     try {
       return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { filename: compilation.entries[0].context });
@@ -657,7 +655,13 @@ module.exports.getAssetPermissions = function(assetName) {
 };
 
 module.exports.initAssetPermissionsCache = function (compilation) {
-  const entryId = getEntryId(compilation);
+  let entryId;
+  if (compilation.options && typeof compilation.options.entry === 'string') {
+    entryId = compilation.options.entry;
+  }
+  else {
+    entryId = getEntryId(compilation);
+  }
   const state = lastState = {
     entryId,
     assets: Object.create(null),
