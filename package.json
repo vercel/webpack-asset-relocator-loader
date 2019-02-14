@@ -14,7 +14,7 @@
     "dist/*"
   ],
   "devDependencies": {
-    "@zeit/ncc": "^0.14.1",
+    "@zeit/ncc": "^0.15.0",
     "acorn": "^6.0.6",
     "acorn-stage3": "^1.0.0",
     "bindings": "^1.4.0",
