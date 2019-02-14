@@ -357,7 +357,9 @@ module.exports = async function (content) {
   }
 
   function isAnalyzableRequire (expression) {
-    if (expression.type === 'Identifier' || expression.type === 'MemberExpression')
+    if (expression.type === 'Identifier' ||
+        expression.type === 'MemberExpression' ||
+        expression.type === 'CallExpression')
       return false;
     // "possibly" analyzable (this can be further restricted over time)
     return true;
