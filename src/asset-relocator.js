@@ -66,6 +66,9 @@ function getAssetState (options, compilation) {
 }
 
 function getEntryId (compilation) {
+  if (compilation.options && typeof compilation.options.entry === 'string') {
+    return resolve.sync(compilation.options.entry);
+  }
   if (compilation.entries && compilation.entries.length) {
     try {
       return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { filename: compilation.entries[0].context });
@@ -655,28 +658,25 @@ module.exports.getAssetPermissions = function(assetName) {
 };
 
 module.exports.initAssetPermissionsCache = function (compilation) {
-  let entryId;
-  if (compilation.options && typeof compilation.options.entry === 'string') {
-    entryId = compilation.options.entry;
-  }
-  else {
-    entryId = getEntryId(compilation);
-  }
+  const entryId = getEntryId(compilation);
+  if (!entryId)
+    return;
   const state = lastState = {
-    entryId,
+    entryId: entryId,
     assets: Object.create(null),
     assetNames: Object.create(null),
     assetPermissions: Object.create(null),
     hadOptions: false
-  }
+  };
   stateMap.set(compilation, state);
   compilation.cache.get('/RelocateLoader/AssetPermissions/' + entryId, null, (err, _assetPermissions) => {
     if (err) console.error(err);
-    state.assetPermissions = JSON.parse(_assetPermissions || 'null') || Object.create(null);
+    if (_assetPermissions)
+      state.assetPermissions = JSON.parse(_assetPermissions);
   });
   compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
     compilation.cache.store('/RelocateLoader/AssetPermissions/' + entryId, null, JSON.stringify(state.assetPermissions), (err) => {
       if (err) console.error(err);
     });
   });
-}
+};
