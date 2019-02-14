@@ -50,29 +50,24 @@ function getAssetState (options, compilation) {
       entryId: getEntryId(compilation),
       assets: Object.create(null),
       assetNames: Object.create(null),
-      assetPermissions: Object.create(null)
+      assetPermissions: Object.create(null),
+      hadOptions: false
     });
+  }
+  if (!state.hadOptions) {
+    state.hadOptions = true;
     if (options && options.existingAssetNames) {
       options.existingAssetNames.forEach(assetName => {
         state.assetNames[assetName] = true;
       });
     }
-    compilation.compiler.hooks.compilation.tap("relocate-loader", compilation => {
-      compilation.cache.get('/RelocateLoader/AssetPermissions/' + state.entryId, null, (err, _assetPermissions) => {
-        if (err) console.error(err);
-        state.assetPermissions = JSON.parse(_assetPermissions || 'null') || Object.create(null);
-      });
-    });
-    compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
-      compilation.cache.store('/RelocateLoader/AssetPermissions/' + state.entryId, null, JSON.stringify(state.assetPermissions), (err) => {
-        if (err) console.error(err);
-      });
-    });
   }
   return lastState = state;
 }
 
 function getEntryId (compilation) {
+  if (typeof compilation.options.entry === 'string')
+    return compilation.options.entry;
   if (compilation.entries && compilation.entries.length) {
     try {
       return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { filename: compilation.entries[0].context });
@@ -660,3 +655,24 @@ module.exports.getAssetPermissions = function(assetName) {
   if (lastState)
     return lastState.assetPermissions[assetName];
 };
+
+module.exports.initAssetPermissionsCache = function (compilation) {
+  const entryId = getEntryId(compilation);
+  const state = lastState = {
+    entryId,
+    assets: Object.create(null),
+    assetNames: Object.create(null),
+    assetPermissions: Object.create(null),
+    hadOptions: false
+  }
+  stateMap.set(compilation, state);
+  compilation.cache.get('/RelocateLoader/AssetPermissions/' + entryId, null, (err, _assetPermissions) => {
+    if (err) console.error(err);
+    state.assetPermissions = JSON.parse(_assetPermissions || 'null') || Object.create(null);
+  });
+  compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
+    compilation.cache.store('/RelocateLoader/AssetPermissions/' + entryId, null, JSON.stringify(state.assetPermissions), (err) => {
+      if (err) console.error(err);
+    });
+  });
+}
