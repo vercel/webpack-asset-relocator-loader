@@ -466,7 +466,7 @@ module.exports = async function (content) {
           node.arguments.length === 2 && node.arguments[0].type === 'Identifier' &&
           node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
         transformed = true;
-        magicString.overwrite(node.start, node.arguments[0].start + 1, 'require.resolve(');
+        magicString.overwrite(node.start, node.arguments[0].end + 1, 'require.resolve(');
         return this.skip();
       }
 

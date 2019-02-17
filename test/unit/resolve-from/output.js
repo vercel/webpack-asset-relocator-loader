@@ -90,7 +90,7 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 var resolveFrom = __webpack_require__(1);
-var x = __webpack_require__(4).resolve(_dirname, './input.js');
+var x = /*require.resolve*/( 0);
 require(x);
 
 
@@ -147,20 +147,6 @@ module.exports = require("path");
 /***/ (function(module, exports) {
 
 module.exports = require("module");
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports) {
-
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = function() { return []; };
-webpackEmptyContext.resolve = webpackEmptyContext;
-module.exports = webpackEmptyContext;
-webpackEmptyContext.id = 4;
 
 /***/ })
 /******/ ]);
