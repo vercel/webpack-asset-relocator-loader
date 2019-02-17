@@ -277,7 +277,7 @@ module.exports = async function (content) {
     }
   }
 
-  let nbindId, pregypId, bindingsId;
+  let nbindId, pregypId, bindingsId, resolveFromId;
 
   if (isESM) {
     for (const decl of ast.body) {
@@ -300,6 +300,8 @@ module.exports = async function (content) {
               pregypId = bindingId;
             else if (source === 'nbind')
               nbindId = bindingId;
+            else if (source === 'resolve-from')
+              resovleFromId = bindingId;
           }
         }
       }
@@ -458,6 +460,15 @@ module.exports = async function (content) {
           return this.skip();
         }
       }
+      // resolveFrom(__dirname, ...) -> require.resolve(...)
+      else if (resolveFromId && node.type === 'CallExpression' &&
+          node.callee.type === 'Identifier' && node.callee.name === resolveFromId &&
+          node.arguments.length === 2 && node.arguments[0].type === 'Identifier' &&
+          node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+        transformed = true;
+        magicString.overwrite(node.start, node.arguments[0].start + 1, 'require.resolve(');
+        return this.skip();
+      }
 
       // require.main -> __non_webpack_require__.main
       else if (!isESM && node.type === 'MemberExpression' &&
@@ -500,6 +511,8 @@ module.exports = async function (content) {
           let binding;
           if (!isESM && isStaticRequire(decl.init)) {
             const source = decl.init.arguments[0].value;
+            if (source === 'resolve-from')
+              resolveFromId = decl.id.name;
             const staticModule = staticModules[source];
             if (staticModule) {
               // var known = require('known');
