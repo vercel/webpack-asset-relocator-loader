@@ -358,7 +358,7 @@ module.exports = async function (content) {
   }
 
   function isAnalyzableRequire (expression) {
-    if (expression.type === 'Identifier' ||
+    if (expression && expression.type === 'Identifier' ||
         expression.type === 'MemberExpression' ||
         expression.type === 'CallExpression')
       return false;
@@ -408,11 +408,13 @@ module.exports = async function (content) {
       }
       // require
       else if (!isESM && isRequire(node)) {
+        const expression = node.arguments[0];
         // require('bindings')('asdf')
         if (isStaticRequire(node) &&
             parent.type === 'CallExpression' &&
             parent.callee === node &&
-            node.arguments[0].value === 'bindings') {
+            expression &&
+            expression.value === 'bindings') {
           let staticValue = computeStaticValue(parent.arguments[0], true);
           let bindingsValue;
           if (staticValue && 'value' in staticValue)
@@ -424,20 +426,29 @@ module.exports = async function (content) {
             return this.skip();
           }
         }
-        // require(`${__dirname}...`) -> require(`./...`)
         else {
-          if (node.arguments[0] &&
-              node.arguments[0].type === 'TemplateLiteral' &&
-              node.arguments[0].quasis[0].value.cooked.length === 0 &&
-              node.arguments[0].expressions[0].type === 'Identifier' &&
-              node.arguments[0].expressions[0].name === '__dirname' &&
+          // require(`${__dirname}...`) -> require(`./...`)
+          if (expression &&
+              expression.type === 'TemplateLiteral' &&
+              expression.quasis[0].value.cooked.length === 0 &&
+              expression.expressions[0].type === 'Identifier' &&
+              expression.expressions[0].name === '__dirname' &&
               knownBindings.__dirname.shadowDepth === 0) {
             transformed = true;
-            magicString.overwrite(node.arguments[0].expressions[0].start - 2, node.arguments[0].expressions[0].end + 1, '.');
+            magicString.overwrite(expression.expressions[0].start - 2, expression.expressions[0].end + 1, '.');
+            return this.skip();
+          }
+          // require(unknown || 'known') -> require('known')
+          else if (expression && expression.type === 'LogicalExpression' &&
+                expression.operator === '||' &&
+                expression.left.type === 'Identifier' &&
+                expression.right.type === 'Literal') {
+            transformed = true;
+            magicString.overwrite(expression.start, expression.end, code.substring(expression.right.start, expression.right.end));
             return this.skip();
           }
           // dynamic require -> outer require
-          else if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(node.arguments[0])) {
+          else if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(expression)) {
             transformed = true;
             magicString.overwrite(node.callee.start, node.callee.end, "__non_webpack_require__");
             return this.skip();
