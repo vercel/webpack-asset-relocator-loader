@@ -176,7 +176,10 @@ module.exports = async function (content) {
         outName = assetPath.substr(pkgBase.length).replace(/\\/g, '/');
       // If the asset is a ".node" binary, then glob for possible shared
       // libraries that should also be included
-      assetEmissionPromises = assetEmissionPromises.then(sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile));
+      const nextPromise = sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
+      assetEmissionPromises = assetEmissionPromises.then(() => {
+        return nextPromise;
+      });
     }
 
     const name = assetState.assets[assetPath] ||
@@ -513,7 +516,11 @@ module.exports = async function (content) {
             const source = decl.init.arguments[0].value;
             if (source === 'resolve-from')
               resolveFromId = decl.id.name;
-            const staticModule = staticModules[source];
+            let staticModule;
+            if (source === 'bindings')
+              staticModule = { default: createBindings() };
+            else
+              staticModule = staticModules[source];
             if (staticModule) {
               // var known = require('known');
               if (decl.id.type === 'Identifier') {
