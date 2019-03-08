@@ -37,6 +37,8 @@ module.exports = function (ast, vars = {}) {
     }
     else if (node.type === 'UnaryExpression'){
       var val = walk(node.argument);
+      if (!val)
+        return;
       if ('value' in val) {
         if (node.operator === '+') return { value: +val.value };
         if (node.operator === '-') return { value: -val.value };
@@ -56,7 +58,7 @@ module.exports = function (ast, vars = {}) {
       for (var i = 0, l = node.elements.length; i < l; i++) {
         var x = walk(node.elements[i]);
         if (!x) return;
-        if ('test' in x) return;          
+        if ('test' in x) return;
         xs.push(x.value);
       }
       return { value: xs };
@@ -193,26 +195,33 @@ module.exports = function (ast, vars = {}) {
       if (!obj || 'test' in obj || typeof obj.value === 'function')
         return;
       if (node.property.type === 'Identifier') {
-        if (typeof obj.value === 'object' && node.property.name in obj.value)
-          return { value: obj.value[node.property.name] };
-        else if (obj.value[UNKNOWN])
-          return;
-        else
+        if (typeof obj.value === 'object' && obj.value !== null) {
+          if (node.property.name in obj.value)
+            return { value: obj.value[node.property.name] };
+          else if (obj.value[UNKNOWN])
+            return;
+        }
+        else {
           return { value: undefined };
+        }
       }
       var prop = walk(node.property);
       if (!prop || 'test' in prop)
         return;
-      if (typeof obj.value === 'object' && prop.value in obj.value) {
-        const val = obj.value[prop.value];
-        if (val === UNKNOWN)
+      if (typeof obj.value === 'object' && obj.value !== null) {
+        if (prop.value in obj.value) {
+          const val = obj.value[prop.value];
+          if (val === UNKNOWN)
+            return;
+          return { value: val };
+        }
+        else if (obj.value[UNKNOWN]) {
           return;
-        return { value: val };
+        }
       }
-      else if (obj.value[UNKNOWN])
-        return;
-      else
+      else {
         return { value: undefined };
+      }
     }
     else if (node.type === 'ConditionalExpression') {
       var val = walk(node.test);

@@ -39,7 +39,7 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__/;
+const relocateRegEx = /_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node/;
 
 const stateMap = new Map();
 let lastState;
@@ -259,6 +259,7 @@ module.exports = async function (content) {
     process: {
       shadowDepth: 0,
       value: {
+        // TODO: consider making this an outward trace?
         versions: {
           node: 10,
           [UNKNOWN]: true
@@ -586,14 +587,10 @@ module.exports = async function (content) {
           }
           // var known = known.knownProp;
           else if (decl.id.type === 'Identifier' &&
-                   decl.init &&
-                   decl.init.type === 'MemberExpression' &&
-                   decl.init.computed === false &&
-                   decl.init.object.type === 'Identifier' &&
-                   decl.init.property.type === 'Identifier' &&
-                   (binding = getKnownBinding(decl.init.object.name)) !== undefined &&
-                   decl.init.property.name in binding) {
-            setKnownBinding(decl.id.name, binding[decl.init.property.name]);
+                   decl.init) {
+            const computed = computeStaticValue(decl.init);
+            if (computed && !computed.test)
+              setKnownBinding(decl.id.name, computed.value);
           }
         }
       }
@@ -602,6 +599,21 @@ module.exports = async function (content) {
         if (isStaticRequire(node.right) && node.right.arguments[0].value in staticModules &&
             node.left.type === 'Identifier' && scope.declarations[node.left.name]) {
           setKnownBinding(node.left.name, staticModules[node.right.arguments[0].value]);
+        }
+      }
+      // condition ? require('a') : require('b')
+      // attempt to inline known branch based on variable analysis
+      else if (node.type === 'ConditionalExpression' && isStaticRequire(node.consequent) && isStaticRequire(node.alternate)) {
+        const computed = computeStaticValue(node.test);
+        if (computed && computed.value) {
+          transformed = true;
+          if (computed.value) {
+            magicString.overwrite(node.start, node.end, code.substring(node.consequent.start, node.consequent.end));
+          }
+          else {
+            magicString.overwrite(node.start, node.end, code.substring(node.alternate.start, node.alternate.end));
+          }
+          return this.skip();
         }
       }
     },
