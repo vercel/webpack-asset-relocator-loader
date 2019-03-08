@@ -192,12 +192,18 @@ module.exports = function (ast, vars = {}) {
       // do not allow access to methods on Function 
       if (!obj || 'test' in obj || typeof obj.value === 'function')
         return;
-      if (node.property.type === 'Identifier')
-        return { value: obj.value[node.property.name] };
+      if (node.property.type === 'Identifier') {
+        if (typeof obj.value === 'object' && node.property.name in obj.value)
+          return { value: obj.value[node.property.name] };
+        else if (obj.value[UNKNOWN])
+          return;
+        else
+          return { value: undefined };
+      }
       var prop = walk(node.property);
       if (!prop || 'test' in prop)
         return;
-      if (prop.value in obj.value) {
+      if (typeof obj.value === 'object' && prop.value in obj.value) {
         const val = obj.value[prop.value];
         if (val === UNKNOWN)
           return;
@@ -314,4 +320,4 @@ module.exports = function (ast, vars = {}) {
   }
 };
 
-const UNKNOWN = module.exports.UNKNOWN = {};
+const UNKNOWN = module.exports.UNKNOWN = Symbol();
