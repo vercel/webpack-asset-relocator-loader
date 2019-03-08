@@ -151,8 +151,12 @@ module.exports = function (ast, vars = {}) {
       return;
     }
     else if (node.type === 'Identifier') {
-      if (Object.hasOwnProperty.call(vars, node.name))
-        return { value: vars[node.name] };
+      if (Object.hasOwnProperty.call(vars, node.name)) {
+        const val = vars[node.name];
+        if (val === UNKNOWN)
+          return;
+        return { value: val };
+      }
       return;
     }
     else if (node.type === 'ThisExpression') {
@@ -174,7 +178,10 @@ module.exports = function (ast, vars = {}) {
         args.push(x.value);
       }
       try {
-        return { value: callee.value.apply(ctx, args) };
+        const result = callee.value.apply(ctx, args);
+        if (result === UNKNOWN)
+          return;
+        return { value: result };
       }
       catch (e) {
         return;
@@ -190,7 +197,16 @@ module.exports = function (ast, vars = {}) {
       var prop = walk(node.property);
       if (!prop || 'test' in prop)
         return;
-      return { value: obj.value[prop.value] };
+      if (prop.value in obj.value) {
+        const val = obj.value[prop.value];
+        if (val === UNKNOWN)
+          return;
+        return { value: val };
+      }
+      else if (obj.value[UNKNOWN])
+        return;
+      else
+        return { value: undefined };
     }
     else if (node.type === 'ConditionalExpression') {
       var val = walk(node.test);
@@ -297,3 +313,5 @@ module.exports = function (ast, vars = {}) {
     return;
   }
 };
+
+const UNKNOWN = module.exports.UNKNOWN = {};

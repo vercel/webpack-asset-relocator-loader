@@ -19,6 +19,7 @@ acorn = acorn.Parser.extend(stage3);
 
 const staticPath = Object.assign({ default: path }, path);
 const staticFs = { default: { existsSync }, existsSync };
+const { UNKNOWN } = evaluate;
 
 function isExpressionReference(node, parent) {
 	if (parent.type === 'MemberExpression') return parent.computed || node === parent.object;
@@ -254,6 +255,16 @@ module.exports = async function (content) {
     __filename: {
       shadowDepth: 0,
       value: id
+    },
+    process: {
+      shadowDepth: 0,
+      value: {
+        versions: {
+          node: 10,
+          [UNKNOWN]: true
+        },
+        [UNKNOWN]: true   
+      }
     }
   });
 
@@ -447,11 +458,21 @@ module.exports = async function (content) {
             magicString.overwrite(expression.start, expression.end, code.substring(expression.right.start, expression.right.end));
             return this.skip();
           }
-          // dynamic require -> outer require
-          else if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(expression)) {
-            transformed = true;
-            magicString.overwrite(node.callee.start, node.callee.end, "__non_webpack_require__");
-            return this.skip();
+          // require(expression)
+          else {
+            const computed = computeStaticValue(expression);
+            // analyzable require expression
+            if (computed && computed.value) {
+              transformed = true;
+              magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
+              return this.skip();
+            }
+            // dynamic require -> outer require
+            if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(expression)) {
+              transformed = true;
+              magicString.overwrite(node.callee.start, node.callee.end, "__non_webpack_require__");
+              return this.skip();
+            }
           }
         }
       }
