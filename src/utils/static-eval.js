@@ -67,7 +67,7 @@ module.exports = function (ast, vars = {}) {
       var obj = {};
       for (var i = 0; i < node.properties.length; i++) {
         var prop = node.properties[i];
-        var keyValue = prop.computed ? walk(prop.key) : { value: prop.key.name || prop.key.value };
+        var keyValue = prop.computed ? walk(prop.key) : prop.key && { value: prop.key.name || prop.key.value };
         if (!keyValue || 'test' in keyValue) return;
         var value = walk(prop.value);
         if (!value || 'test' in value) return;
