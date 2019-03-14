@@ -27,14 +27,27 @@
 
 function handleWrappers (ast, scope, magicString) {
   let transformed = false;
+
+  // UglifyJS will convert function wrappers into !function(){}
+  let arg;
+
   if (ast.body.length === 1 &&
+      ast.body[0].type === 'ExpressionStatement' &&
+      ast.body[0].expression.type === 'UnaryExpression' &&
+      ast.body[0].expression.operator === '!' &&
+      ast.body[0].expression.argument.type === 'CallExpression' &&
+      ast.body[0].expression.argument.callee.type === 'FunctionExpression' &&
+      ast.body[0].expression.argument.arguments.length === 1)
+    arg = ast.body[0].expression.argument.arguments[0];
+  else if (ast.body.length === 1 &&
       ast.body[0].type === 'ExpressionStatement' &&
       ast.body[0].expression.type === 'CallExpression' &&
       ast.body[0].expression.callee.type === 'FunctionExpression' &&
-      ast.body[0].expression.arguments.length === 1) {
+      ast.body[0].expression.arguments.length === 1)
+    arg = ast.body[0].expression.arguments[0];
 
+  if (arg) {
     // When.js wrapper
-    const arg = ast.body[0].expression.arguments[0];
     if (arg.type === 'ConditionalExpression' && 
         arg.test.type === 'LogicalExpression' &&
         arg.test.operator === '&&' &&
@@ -92,24 +105,42 @@ function handleWrappers (ast, scope, magicString) {
     // browserify wrapper
     else if (arg.type === 'FunctionExpression' &&
         arg.params.length === 0 &&
-        arg.body.body.length === 2 &&
-        arg.body.body[0].type === 'VariableDeclaration' &&
-        arg.body.body[0].declarations.length === 3 &&
-        arg.body.body[0].declarations.every(decl => decl.init === null && decl.id.type === 'Identifier') &&
-        arg.body.body[1].type === 'ReturnStatement' &&
-        arg.body.body[1].argument.type === 'CallExpression' &&
-        arg.body.body[1].argument.callee.type === 'CallExpression' &&
-        arg.body.body[1].argument.arguments.length &&
-        arg.body.body[1].argument.arguments.every(arg => arg.type === 'Literal' && typeof arg.value === 'number') &&
-        arg.body.body[1].argument.callee.callee.type === 'CallExpression' &&
-        arg.body.body[1].argument.callee.callee.callee.type === 'FunctionExpression' &&
-        arg.body.body[1].argument.callee.callee.arguments.length === 0 &&
+        (arg.body.body.length === 1 ||
+            arg.body.body.length === 2 &&
+            arg.body.body[0].type === 'VariableDeclaration' &&
+            arg.body.body[0].declarations.length === 3 &&
+            arg.body.body[0].declarations.every(decl => decl.init === null && decl.id.type === 'Identifier')
+        ) &&
+        arg.body.body[arg.body.body.length - 1].type === 'ReturnStatement' &&
+        arg.body.body[arg.body.body.length - 1].argument.type === 'CallExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.type === 'CallExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.arguments.length &&
+        arg.body.body[arg.body.body.length - 1].argument.arguments.every(arg => arg.type === 'Literal' && typeof arg.value === 'number') &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.callee.arguments.length === 0 &&
         // (dont go deeper into browserify loader internals than this)
-        arg.body.body[1].argument.callee.arguments.length === 3 &&
-        arg.body.body[1].argument.callee.arguments[0].type === 'ObjectExpression' &&
-        arg.body.body[1].argument.callee.arguments[1].type === 'ObjectExpression' &&
-        arg.body.body[1].argument.callee.arguments[2].type === 'ArrayExpression') {
-      const modules = arg.body.body[1].argument.callee.arguments[0].properties;
+        arg.body.body[arg.body.body.length - 1].argument.callee.arguments.length === 3 &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.arguments[0].type === 'ObjectExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.arguments[1].type === 'ObjectExpression' &&
+        arg.body.body[arg.body.body.length - 1].argument.callee.arguments[2].type === 'ArrayExpression') {
+      const modules = arg.body.body[arg.body.body.length - 1].argument.callee.arguments[0].properties;
+
+      // replace the browserify wrapper require with __non_webpack_require__
+      const innerFn = arg.body.body[arg.body.body.length - 1].argument.callee.callee.callee.body.body[0];
+      let innerBody;
+      if (innerFn.type === 'FunctionDeclaration')
+        innerBody = innerFn.body;
+      else if (innerFn.type === 'ReturnStatement')
+        innerBody = innerFn.argument.body;
+
+      if (innerBody) {
+        const requireVar = innerBody.body[0].body.body[0].consequent.body[0].consequent.body[0].declarations[0].init;
+        const requireCheck = innerBody.body[1].init.declarations[0].init;
+        magicString.overwrite(requireVar.start, requireVar.end, '__non_webpack_require__');
+        magicString.overwrite(requireCheck.start, requireCheck.end, '__non_webpack_require__');
+        transformed = true;
+      }
       
       // verify modules is the expected data structure
       // in the process, extract external requires
