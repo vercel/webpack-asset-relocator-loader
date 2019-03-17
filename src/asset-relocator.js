@@ -599,9 +599,15 @@ module.exports = async function (content) {
           // var { knownProp } = known;
           else if (decl.id.type === 'ObjectPattern' &&
                    decl.init && decl.init.type === 'Identifier' &&
-                   (binding = getKnownBinding(decl.init.name)) !== undefined &&
-                   prop.key.name in binding) {
-            setKnownBinding(prop.value.name, binding[prop.key.name]);
+                   (binding = getKnownBinding(decl.init.name)) !== undefined) {
+            for (const prop of decl.id.properties) {
+              if (prop.type !== 'Property' ||
+                prop.key.type !== 'Identifier' ||
+                prop.value.type !== 'Identifier' ||
+                !(prop.key.name in binding))
+              continue;
+              setKnownBinding(prop.value.name, binding[prop.key.name]);
+            }
           }
           // var known = known.knownProp;
           else if (decl.id.type === 'Identifier' &&
