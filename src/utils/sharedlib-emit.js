@@ -1,11 +1,12 @@
 const os = require('os');
 const fs = require('graceful-fs');
 const glob = require('glob');
+const path = require('path');
 
 let sharedlibGlob;
 switch (os.platform()) {
   case 'darwin':
-    sharedlibGlob = '/**/*.dylib';
+    sharedlibGlob = '/**/*.@(dylib|so?(.*))';
   break;
   case 'win32':
     sharedlibGlob = '/**/*.dll';
@@ -20,15 +21,23 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
     glob(pkgPath + sharedlibGlob, { ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
   );
   await Promise.all(files.map(async file => {
-    const [source, permissions] = await Promise.all([
+    const [source, stats] = await Promise.all([
       new Promise((resolve, reject) =>
         fs.readFile(file, (err, source) => err ? reject(err) : resolve(source))
       ),
       await new Promise((resolve, reject) => 
-        fs.stat(file, (err, stats) => err ? reject(err) : resolve(stats.mode))
+        fs.lstat(file, (err, stats) => err ? reject(err) : resolve(stats))
       )
     ]);
-    assetState.assetPermissions[file.substr(pkgPath.length)] = permissions;
-    emitFile(assetBase + file.substr(pkgPath.length), source);
+    assetState.assetPermissions[file.substr(pkgPath.length)] = stats.mode;
+    if (stats.isSymbolicLink()) {
+      const symlink = await new Promise((resolve, reject) => {
+        fs.readlink(file, (err, path) => err ? reject(err) : resolve(path));
+      });
+      assetState.assetSymlinks[file.substr(pkgPath.length)] = path.relative(path.dirname(file), path.resolve(symlink));
+    }
+    else {
+      emitFile(assetBase + file.substr(pkgPath.length), source);
+    }
   }));
 };
