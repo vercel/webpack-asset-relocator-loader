@@ -34,7 +34,8 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
       const symlink = await new Promise((resolve, reject) => {
         fs.readlink(file, (err, path) => err ? reject(err) : resolve(path));
       });
-      assetState.assetSymlinks[file.substr(pkgPath.length)] = path.relative(path.dirname(file), path.resolve(symlink));
+      const baseDir = path.dirname(file);
+      assetState.assetSymlinks[file.substr(pkgPath.length + 1)] = path.relative(baseDir, path.resolve(baseDir, symlink));
     }
     else {
       emitFile(assetBase + file.substr(pkgPath.length), source);
