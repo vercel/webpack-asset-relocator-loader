@@ -1,5 +1,5 @@
 const path = require('path');
-const { readFile, stat, statSync, existsSync } = require('graceful-fs');
+const { readFile, stat, lstat, readlink, statSync, existsSync } = require('graceful-fs');
 const { walk } = require('estree-walker');
 const MagicString = require('magic-string');
 const { attachScopes } = require('rollup-pluginutils');
@@ -188,16 +188,25 @@ module.exports = async function (content) {
 
     // console.log('Emitting ' + assetPath + ' for module ' + id);
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      const [source, permissions] = await Promise.all([
+      const [source, stats] = await Promise.all([
         new Promise((resolve, reject) =>
           readFile(assetPath, (err, source) => err ? reject(err) : resolve(source))
         ),
-        await new Promise((resolve, reject) =>
-          stat(assetPath, (err, stats) => err ? reject(err) : resolve(stats.mode))
+        await new Promise((resolve, reject) => 
+          lstat(assetPath, (err, stats) => err ? reject(err) : resolve(stats))
         )
       ]);
-      assetState.assetPermissions[name] = permissions;
-      this.emitFile(assetBase(options) + name, source);
+      if (stats.isSymbolicLink()) {
+        const symlink = await new Promise((resolve, reject) => {
+          readlink(assetPath, (err, path) => err ? reject(err) : resolve(path));
+        });
+        const baseDir = path.dirname(assetPath);
+        assetState.assetSymlinks[assetBase(options) + name] = path.relative(baseDir, path.resolve(baseDir, symlink));
+      }
+      else {
+        assetState.assetPermissions[assetBase(options) + name] = stats.mode;
+        this.emitFile(assetBase(options) + name, source);
+      }
     });
     return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
   };
@@ -214,16 +223,25 @@ module.exports = async function (content) {
         // dont emit empty directories or ".js" files
         if (file.endsWith('/') || file.endsWith('.js'))
           return;
-        const [source, permissions] = await Promise.all([
+        const [source, stats] = await Promise.all([
           new Promise((resolve, reject) =>
             readFile(file, (err, source) => err ? reject(err) : resolve(source))
           ),
           await new Promise((resolve, reject) => 
-            stat(file, (err, stats) => err ? reject(err) : resolve(stats.mode))
+            lstat(file, (err, stats) => err ? reject(err) : resolve(stats))
           )
         ]);
-        assetState.assetPermissions[name + file.substr(assetDirPath.length)] = permissions;
-        this.emitFile(assetBase(options) + name + file.substr(assetDirPath.length), source);
+        if (stats.isSymbolicLink()) {
+          const symlink = await new Promise((resolve, reject) => {
+            readlink(file, (err, path) => err ? reject(err) : resolve(path));
+          });
+          const baseDir = path.dirname(file);
+          assetState.assetSymlinks[assetBase(options) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink));
+        }
+        else {
+          assetState.assetPermissions[assetBase(options) + name + file.substr(assetDirPath.length)] = stats.mode;
+          this.emitFile(assetBase(options) + name + file.substr(assetDirPath.length), source);
+        }
       }));
     });
 

@@ -29,7 +29,6 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
         fs.lstat(file, (err, stats) => err ? reject(err) : resolve(stats))
       )
     ]);
-    assetState.assetPermissions[file.substr(pkgPath.length)] = stats.mode;
     if (stats.isSymbolicLink()) {
       const symlink = await new Promise((resolve, reject) => {
         fs.readlink(file, (err, path) => err ? reject(err) : resolve(path));
@@ -38,6 +37,7 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
       assetState.assetSymlinks[file.substr(pkgPath.length + 1)] = path.relative(baseDir, path.resolve(baseDir, symlink));
     }
     else {
+      assetState.assetPermissions[file.substr(pkgPath.length)] = stats.mode;
       emitFile(assetBase + file.substr(pkgPath.length), source);
     }
   }));
