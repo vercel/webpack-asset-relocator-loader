@@ -39,7 +39,7 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node/;
+const relocateRegEx = /(?<![a-z])(_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
 
 const stateMap = new Map();
 let lastState;
@@ -259,8 +259,14 @@ module.exports = async function (content) {
   }
   catch (e) {}
   if (!ast) {
-    ast = acorn.parse(code, { sourceType: 'module' });
-    isESM = true;
+    try {
+      ast = acorn.parse(code, { sourceType: 'module' });
+      isESM = true;
+    }
+    catch (e) {
+      this.callback(e);
+      return;
+    }
   }
 
   let scope = attachScopes(ast, 'scope');
