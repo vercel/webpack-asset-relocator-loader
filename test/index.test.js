@@ -4,8 +4,12 @@ const MemoryFS = require("memory-fs");
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
+    // simple error test
+    let shouldError = false;
+    if (unitTest.endsWith('-err'))
+      shouldError = true;
     const testDir = `${__dirname}/unit/${unitTest}`;
-    const expected = fs
+    const expected = !shouldError && fs
       .readFileSync(`${testDir}/output${global.coverage ? '-coverage' : ''}.js`)
       .toString()
       .trim()
@@ -45,12 +49,23 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
     });
     compiler.outputFileSystem = mfs;
   
-    const stats = await new Promise((resolve, reject) => {
-      compiler.run((err, stats) => {
-        if (err) return reject(err);
-        resolve(stats);
+    try {
+      var stats = await new Promise((resolve, reject) => {
+        compiler.run((err, stats) => {
+          if (err) return reject(err);
+          resolve(stats);
+        });
       });
-    });
+    }
+    catch (err) {
+      if (shouldError)
+        return;
+      throw err;
+    }
+    if (shouldError) {
+      expect(stats.compilation.errors.length).toBeGreaterThan(0);
+      return;
+    }
 
     let code;
     try {
