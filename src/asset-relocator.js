@@ -12,6 +12,7 @@ const glob = require('glob');
 const getPackageBase = require('./utils/get-package-base');
 const { pregyp, nbind } = require('./utils/binary-locators');
 const handleWrappers = require('./utils/wrappers');
+const handleSpecialCase = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
 const stage3 = require('acorn-stage3');
@@ -133,7 +134,9 @@ module.exports = async function (content) {
 
   let code = content.toString();
 
-  if (id.endsWith('.json') || !code.match(relocateRegEx))
+  const specialCase = handleSpecialCase(id, code);
+
+  if (!specialCase && (id.endsWith('.json') || !code.match(relocateRegEx)))
     return this.callback(null, code);
 
   const options = getOptions(this);
@@ -271,6 +274,12 @@ module.exports = async function (content) {
 
   let scope = attachScopes(ast, 'scope');
 
+  let transformed = false;
+
+  if (specialCase) {
+    transformed = specialCase({ code, ast, scope, magicString, emitAsset, emitAssetDirectory });
+  }
+
   const knownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
@@ -347,8 +356,6 @@ module.exports = async function (content) {
     }
   }
 
-  let transformed = false;
-
   function computeStaticValue (expr) {
     staticBindingsInstance = false;
     // function expression analysis disabled due to static-eval locals bug
@@ -402,8 +409,11 @@ module.exports = async function (content) {
     return true;
   }
 
-  if (options.wrapperCompatibility)
-    ({ ast, scope, transformed } = handleWrappers(ast, scope, magicString, code.length));
+  if (options.wrapperCompatibility) {
+    ({ ast, scope, transformed: wrapperTransformed } = handleWrappers(ast, scope, magicString, code.length));
+    if (wrapperTransformed)
+      transformed = true;
+  }
 
   walk(ast, {
     enter (node, parent) {

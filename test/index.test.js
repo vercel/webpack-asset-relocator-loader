@@ -4,6 +4,8 @@ const MemoryFS = require("memory-fs");
 
 jest.setTimeout(20000);
 
+global._unit = true;
+
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
     // simple error test
