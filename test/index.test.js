@@ -36,6 +36,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
         filename: "index.js",
         libraryTarget: "commonjs2"
       },
+      externals: ['express', 'pug'],
       module: {
         rules: [{
           test: /\.(js|mjs|node)$/,
