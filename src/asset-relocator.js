@@ -39,7 +39,7 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /(?<![a-z])(_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
+const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
 
 const stateMap = new Map();
 let lastState;
@@ -143,7 +143,14 @@ module.exports = async function (content) {
   // calculate the base-level package folder to load bindings from
   const pkgBase = getPackageBase(id);
 
+  // unique symbol value to identify express instance in static analysis
+  const EXPRESS = Symbol();
   const staticModules = Object.assign(Object.create(null), {
+    express: {
+      default: function () {
+        return EXPRESS;
+      }
+    },
     path: staticPath,
     fs: staticFs,
     'node-pre-gyp': pregyp,
@@ -645,6 +652,22 @@ module.exports = async function (content) {
           }
           return this.skip();
         }
+      }
+      // Express templates:
+      // app.set("view engine", [name]) -> app.engine([name], require([name]).__express).set("view engine", [name])
+      else if (node.type === 'CallExpression' &&
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          getKnownBinding(node.callee.object.name) === EXPRESS &&
+          node.callee.property.type === 'Identifier' &&
+          node.callee.property.name === 'set' &&
+          node.arguments.length === 2 &&
+          node.arguments[0].type === 'Literal' &&
+          node.arguments[0].value === 'view engine') {
+        transformed = true;
+        const name = code.substring(node.arguments[1].start, node.arguments[1].end);
+        magicString.appendRight(node.callee.object.end, `.engine(${name}, require(${name}).__express)`);
+        return this.skip();
       }
     },
     leave (node, parent) {
