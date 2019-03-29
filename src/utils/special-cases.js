@@ -12,6 +12,7 @@ module.exports = function (id, _code) {
             statement.declarations[0].id.name === 'googleProtoFilesDir') {
           magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end,
               emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files')));
+          statement.declarations[0].init = null;
           return true;
         }
       }
