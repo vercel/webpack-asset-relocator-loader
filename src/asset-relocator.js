@@ -627,6 +627,9 @@ module.exports = async function (content) {
               if (prop.type !== 'Property' ||
                 prop.key.type !== 'Identifier' ||
                 prop.value.type !== 'Identifier' ||
+                typeof binding !== 'object' ||
+                typeof binding !== 'function' ||
+                binding === null ||
                 !(prop.key.name in binding))
               continue;
               setKnownBinding(prop.value.name, binding[prop.key.name]);
