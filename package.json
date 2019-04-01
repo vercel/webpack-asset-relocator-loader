@@ -1,6 +1,6 @@
 {
   "name": "@zeit/webpack-asset-relocator-loader",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "repository": "zeit/webpack-asset-relocator-loader",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -14,7 +14,7 @@
     "dist/*"
   ],
   "devDependencies": {
-    "@zeit/ncc": "^0.15.0",
+    "@zeit/ncc": "^0.17.0",
     "acorn": "^6.0.6",
     "acorn-stage3": "^1.0.0",
     "bindings": "^1.4.0",
