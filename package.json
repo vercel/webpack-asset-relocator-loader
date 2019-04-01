@@ -1,6 +1,6 @@
 {
   "name": "@zeit/webpack-asset-relocator-loader",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "repository": "zeit/webpack-asset-relocator-loader",
   "license": "MIT",
   "main": "./dist/index.js",
