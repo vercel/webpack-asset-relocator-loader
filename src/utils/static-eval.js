@@ -56,6 +56,10 @@ module.exports = function (ast, vars = {}) {
     else if (node.type === 'ArrayExpression') {
       var xs = [];
       for (var i = 0, l = node.elements.length; i < l; i++) {
+        if (node.elements[i] === null) {
+          xs.push(null);
+          continue;
+        }
         var x = walk(node.elements[i]);
         if (!x) return;
         if ('test' in x) return;
