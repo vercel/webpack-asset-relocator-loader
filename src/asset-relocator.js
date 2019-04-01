@@ -470,8 +470,12 @@ module.exports = async function (content) {
             expression.value === 'bindings') {
           let staticValue = computeStaticValue(parent.arguments[0], true);
           let bindingsValue;
-          if (staticValue && 'value' in staticValue)
-            bindingsValue = createBindings()(staticValue.value);
+          if (staticValue && 'value' in staticValue) {
+            try {
+              bindingsValue = createBindings()(staticValue.value);
+            }
+            catch (err) {}
+          }
           if (bindingsValue) {
             staticChildValue = { value: bindingsValue };
             staticChildNode = parent;
