@@ -536,7 +536,7 @@ module.exports = async function (content) {
             return this.skip();
           }
           // require(expression)
-          else {
+          else if (expression) {
             const computed = computeStaticValue(expression);
             // analyzable require expression
             if (computed && computed.value) {

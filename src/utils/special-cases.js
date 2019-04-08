@@ -91,4 +91,35 @@ module.exports = function (id, _code) {
       }
     };
   }
+  else if (id.endsWith('oracledb/lib/oracledb.js') || global._unit && id.includes('oracledb')) {
+    return ({ ast, magicString }) => {
+      for (const statement of ast.body) {
+        if (statement.type === 'ForStatement' &&
+            statement.body.body &&
+            statement.body.body[0] &&
+            statement.body.body[0].type === 'TryStatement' &&
+            statement.body.body[0].block.body[0] &&
+            statement.body.body[0].block.body[0].type === 'ExpressionStatement' &&
+            statement.body.body[0].block.body[0].expression.type === 'AssignmentExpression' &&
+            statement.body.body[0].block.body[0].expression.operator === '=' &&
+            statement.body.body[0].block.body[0].expression.left.type === 'Identifier' &&
+            statement.body.body[0].block.body[0].expression.left.name === 'oracledbCLib' &&
+            statement.body.body[0].block.body[0].expression.right.type === 'CallExpression' &&
+            statement.body.body[0].block.body[0].expression.right.callee.type === 'Identifier' &&
+            statement.body.body[0].block.body[0].expression.right.callee.name === 'require' &&
+            statement.body.body[0].block.body[0].expression.right.arguments.length === 1 &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].type === 'MemberExpression' &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].computed === true &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].object.type === 'Identifier' &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].object.name === 'binaryLocations' &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].property.type === 'Identifier' &&
+            statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
+          const arg = statement.body.body[0].block.body[0].expression.right.arguments[0];
+          statement.body.body[0].block.body[0].expression.right.arguments = [];
+          magicString.overwrite(arg.start, arg.end, global._unit ? "'./oracledb.js'" : "'../build/Debug/oracledb.node'");
+          return true;
+        }
+      }
+    };
+  }
 };
