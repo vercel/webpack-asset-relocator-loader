@@ -41,7 +41,7 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
+const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|pkginfo|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
 
 const stateMap = new Map();
 let lastState;
@@ -500,7 +500,7 @@ module.exports = async function (content) {
                 var pkg = JSON.parse(readFileSync(scope + '/package.json'));
                 if (filterValues.size) {
                   for (var p in pkg) {
-                    if (filterValues.has(p) === -1)
+                    if (!filterValues.has(p))
                       delete pkg[p];
                   }
                 }

@@ -116,7 +116,8 @@ module.exports = function (id, _code) {
             statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
           const arg = statement.body.body[0].block.body[0].expression.right.arguments[0];
           statement.body.body[0].block.body[0].expression.right.arguments = [];
-          magicString.overwrite(arg.start, arg.end, global._unit ? "'./oracledb.js'" : "'../build/Debug/oracledb.node'");
+          const binaryName = 'oracledb-abi' + process.versions.modules + '-' + process.platform + '-' + process.arch + '.node';
+          magicString.overwrite(arg.start, arg.end, global._unit ? "'./oracledb.js'" : "'../build/Release/" + binaryName + "'");
           return true;
         }
       }
