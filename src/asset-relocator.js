@@ -1,5 +1,5 @@
 const path = require('path');
-const { readFile, stat, lstat, readlink, statSync, existsSync } = require('graceful-fs');
+const { readFileSync, readFile, stat, lstat, readlink, statSync, existsSync } = require('graceful-fs');
 const { walk } = require('estree-walker');
 const MagicString = require('magic-string');
 const { attachScopes } = require('rollup-pluginutils');
@@ -10,6 +10,7 @@ const getUniqueAssetName = require('./utils/dedupe-names');
 const sharedlibEmit = require('./utils/sharedlib-emit');
 const glob = require('glob');
 const getPackageBase = require('./utils/get-package-base');
+const getPackageScope = require('./utils/get-package-scope');
 const { pregyp, nbind } = require('./utils/binary-locators');
 const handleWrappers = require('./utils/wrappers');
 const handleSpecialCase = require('./utils/special-cases');
@@ -462,25 +463,55 @@ module.exports = async function (content) {
       // require
       else if (!isESM && isRequire(node)) {
         const expression = node.arguments[0];
-        // require('bindings')('asdf')
         if (isStaticRequire(node) &&
             parent.type === 'CallExpression' &&
             parent.callee === node &&
-            expression &&
-            expression.value === 'bindings') {
-          let staticValue = computeStaticValue(parent.arguments[0], true);
-          let bindingsValue;
-          if (staticValue && 'value' in staticValue) {
-            try {
-              bindingsValue = createBindings()(staticValue.value);
+            expression) {
+          // require('bindings')('asdf')
+          if (expression.value === 'bindings') {
+            let staticValue = computeStaticValue(parent.arguments[0], true);
+            let bindingsValue;
+            if (staticValue && 'value' in staticValue) {
+              try {
+                bindingsValue = createBindings()(staticValue.value);
+              }
+              catch (err) {}
             }
-            catch (err) {}
+            if (bindingsValue) {
+              staticChildValue = { value: bindingsValue };
+              staticChildNode = parent;
+              staticChildValueBindingsInstance = staticBindingsInstance;
+              return this.skip();
+            }
           }
-          if (bindingsValue) {
-            staticChildValue = { value: bindingsValue };
-            staticChildNode = parent;
-            staticChildValueBindingsInstance = staticBindingsInstance;
-            return this.skip();
+          // require('pkginfo')(module, ...string[])
+          else if (expression.value === 'pkginfo' &&
+                  parent.arguments.length &&
+                  parent.arguments[0].type === 'Identifier' &&
+                  parent.arguments[0].name === 'module') {
+            let filterValues = [];
+            for (let i = 1; i < parent.arguments.length; i++) {
+              if (parent.arguments[i].type === 'Literal')
+                filterValues.push(parent.arguments[i].value);
+            }
+            const scope = getPackageScope(id);
+            if (scope) {
+              try {
+                var pkg = JSON.parse(readFileSync(scope + '/package.json'));
+                if (filterValues.length) {
+                  for (var p in pkg) {
+                    if (filterValues.indexOf(p) === -1)
+                      delete pkg[p];
+                  }
+                }
+              }
+              catch (e) {}
+              if (pkg) {
+                transformed = true;
+                magicString.overwrite(parent.start, parent.end, `Object.assign(module.exports, ${JSON.stringify(pkg)})`);
+                return this.skip();
+              }
+            }
           }
         }
         else {
