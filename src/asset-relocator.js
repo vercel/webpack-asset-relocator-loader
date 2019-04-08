@@ -489,18 +489,18 @@ module.exports = async function (content) {
                   parent.arguments.length &&
                   parent.arguments[0].type === 'Identifier' &&
                   parent.arguments[0].name === 'module') {
-            let filterValues = [];
+            let filterValues = new Set();
             for (let i = 1; i < parent.arguments.length; i++) {
               if (parent.arguments[i].type === 'Literal')
-                filterValues.push(parent.arguments[i].value);
+                filterValues.add(parent.arguments[i].value);
             }
             const scope = getPackageScope(id);
             if (scope) {
               try {
                 var pkg = JSON.parse(readFileSync(scope + '/package.json'));
-                if (filterValues.length) {
+                if (filterValues.size) {
                   for (var p in pkg) {
-                    if (filterValues.indexOf(p) === -1)
+                    if (filterValues.has(p) === -1)
                       delete pkg[p];
                   }
                 }
