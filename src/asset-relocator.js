@@ -17,6 +17,7 @@ const handleSpecialCase = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
 const stage3 = require('acorn-stage3');
+const mergeSourceMaps = require('./utils/merge-source-maps');
 acorn = acorn.Parser.extend(stage3);
 
 const staticPath = Object.assign({ default: path }, path);
@@ -110,7 +111,7 @@ function relAssetPath (context, options) {
   return '../'.repeat(backtrackDepth) + assetBase(options);
 }
 
-module.exports = async function (content) {
+module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
   this.async();
@@ -138,7 +139,7 @@ module.exports = async function (content) {
   const specialCase = handleSpecialCase(id, code);
 
   if (!specialCase && (id.endsWith('.json') || !code.match(relocateRegEx)))
-    return this.callback(null, code);
+    return this.callback(null, code, map);
 
   const options = getOptions(this);
   const assetState = getAssetState(options, this._compilation);
@@ -806,13 +807,15 @@ module.exports = async function (content) {
   });
 
   if (!transformed)
-    return this.callback(null, code);
+    return this.callback(null, code, map);
 
   assetEmissionPromises.then(() => {
     code = magicString.toString();
-    const map = magicString.generateMap();
-  
-    this.callback(null, code, map);
+    const assetMap = magicString.generateMap();
+    assetMap.sources = [id];
+    if (map)
+      map.sources = map.sources.map(name => name.indexOf('!') !== -1 ? name.split('!')[1] : name);
+    this.callback(null, code, map ? mergeSourceMaps(map, assetMap) : assetMap);
   });
 };
 
