@@ -811,11 +811,12 @@ module.exports = async function (content, map) {
 
   assetEmissionPromises.then(() => {
     code = magicString.toString();
-    const assetMap = magicString.generateMap();
-    assetMap.sources = [id];
-    if (map)
-      map.sources = map.sources.map(name => name.indexOf('!') !== -1 ? name.split('!')[1] : name);
-    this.callback(null, code, map ? mergeSourceMaps(map, assetMap) : assetMap);
+    map = map || magicString.generateMap();
+    if (map) {
+      map.sources = [id];
+      // map.sources = map.sources.map(name => name.indexOf('!') !== -1 ? name.split('!')[1] : name);
+    }
+    this.callback(null, code, map);
   });
 };
 
