@@ -16,7 +16,7 @@ switch (os.platform()) {
 }
 
 // helper for emitting the associated shared libraries when a binary is emitted
-module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
+module.exports = async function (pkgPath, assetState, assetBase, emitFile, debugLog) {
   const files = await new Promise((resolve, reject) =>
     glob(pkgPath + sharedlibGlob, { ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
   );
@@ -38,6 +38,8 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile) {
     }
     else {
       assetState.assetPermissions[file.substr(pkgPath.length)] = stats.mode;
+      if (debugLog)
+        console.log('Emitting ' + file + ' for shared library support in ' + pkgPath);
       emitFile(assetBase + file.substr(pkgPath.length), source);
     }
   }));
