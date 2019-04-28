@@ -46,7 +46,8 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
             options: {
               existingAssetNames: ['existing.txt'],
               escapeNonAnalyzableRequires: true,
-              wrapperCompatibility: true
+              wrapperCompatibility: true,
+              debugLog: true
             }
           }]
         }],
