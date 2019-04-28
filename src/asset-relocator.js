@@ -365,6 +365,10 @@ module.exports = async function (content, map) {
     }
   }
 
+  function requireWillFail (specifier) {
+    return (specifier.startsWith('../') || specifier.startsWith('./')) && !existsSync(path.resolve(path.dirname(id), specifier));
+  }
+
   function computeStaticValue (expr) {
     staticBindingsInstance = false;
     // function expression analysis disabled due to static-eval locals bug
@@ -540,10 +544,27 @@ module.exports = async function (content, map) {
           else if (expression) {
             const computed = computeStaticValue(expression);
             // analyzable require expression
-            if (computed && computed.value) {
-              transformed = true;
-              magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
-              return this.skip();
+            if (computed) {
+              if ('value' in computed) {
+                transformed = true;
+                magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
+                return this.skip();
+              }
+              else {
+                // branched require
+                // if one branch is a not found, Webpack fails the whole build
+                // so detect any not found now and inline the found branch
+                if (typeof computed.then === 'string' && requireWillFail(computed.then)) {
+                  transformed = true;
+                  magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.else));
+                  return this.skip();
+                }
+                if (typeof computed.else === 'string' && requireWillFail(computed.else)) {
+                  transformed = true;
+                  magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.then));
+                  return this.skip();
+                }
+              }
             }
             // dynamic require -> outer require
             if (options.escapeNonAnalyzableRequires && !isAnalyzableRequire(expression)) {
