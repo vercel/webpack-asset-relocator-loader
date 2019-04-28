@@ -200,8 +200,12 @@ module.exports = function (ast, vars = {}) {
         return;
       if (node.property.type === 'Identifier') {
         if (typeof obj.value === 'object' && obj.value !== null) {
-          if (node.property.name in obj.value)
-            return { value: obj.value[node.property.name] };
+          if (node.property.name in obj.value) {
+            const val = obj.value[node.property.name];
+            if (val === UNKNOWN)
+              return;
+            return { value: val };
+          }
           else if (obj.value[UNKNOWN])
             return;
         }
