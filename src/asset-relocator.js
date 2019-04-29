@@ -303,7 +303,11 @@ module.exports = async function (content, map) {
     },
     process: {
       shadowDepth: 0,
-      value: {   
+      value: {
+        versions: {
+          node: 10,
+          [UNKNOWN]: true
+        },   
         env: {
           NODE_ENV: options.production ? 'production' : UNKNOWN,
           [UNKNOWN]: true

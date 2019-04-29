@@ -1,1 +1,1 @@
-require(process.versions.node <= 6 ? './does-not-exist' : './input.js');
+require(process.versions.node <= 6 ? './exists.js' : './input.js');
