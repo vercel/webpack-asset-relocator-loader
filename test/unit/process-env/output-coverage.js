@@ -89,18 +89,11 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(process.env.NODE_ENV === 'production' ? 1 : 2);
+__webpack_require__(1);
 
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-console.log('a');
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports) {
 
 console.log('b');
