@@ -44,8 +44,6 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|pkginfo|require\(\s*([^'"]|['"]esm['"])|__non_webpack_require__|process\.versions\.node)/;
-
 const stateMap = new Map();
 let lastState;
 
@@ -136,12 +134,12 @@ module.exports = async function (content, map) {
     return;
   }
 
+  if (id.endsWith('.json'))
+    return this.callback(null, code, map);
+
   let code = content.toString();
 
   const specialCase = handleSpecialCase(id, code);
-
-  if (!specialCase && (id.endsWith('.json') || !code.match(relocateRegEx)))
-    return this.callback(null, code, map);
 
   const options = getOptions(this);
   const assetState = getAssetState(options, this._compilation);
