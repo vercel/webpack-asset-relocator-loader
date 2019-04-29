@@ -41,7 +41,8 @@ Any `.node` files included will also support binary relocation.
             existingAssetNames: []
             wrapperCompatibility: false, // optional, default
             escapeNonAnalyzableRequires: false, // optional, default
-
+            // build for process.env.NODE_ENV = 'production'
+            production: false, // optional, default
           }
         }
       }

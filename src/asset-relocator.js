@@ -300,8 +300,12 @@ module.exports = async function (content, map) {
     },
     process: {
       shadowDepth: 0,
-      value: {
-        [UNKNOWN]: true   
+      value: {   
+        env: {
+          NODE_ENV: options.production ? 'production' : UNKNOWN,
+          [UNKNOWN]: true
+        },
+        [UNKNOWN]: true
       }
     }
   });
