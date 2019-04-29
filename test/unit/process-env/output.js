@@ -96,7 +96,7 @@ __webpack_require__(1);
 /* 1 */
 /***/ (function(module, exports) {
 
-console.log('b');
+console.log('a');
 
 
 /***/ })

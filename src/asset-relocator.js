@@ -20,6 +20,8 @@ const stage3 = require('acorn-stage3');
 const mergeSourceMaps = require('./utils/merge-source-maps');
 acorn = acorn.Parser.extend(stage3);
 
+const extensions = ['.js', '.json', '.node'];
+
 const staticPath = Object.assign({ default: path }, path);
 const staticFs = { default: { existsSync }, existsSync };
 const { UNKNOWN } = evaluate;
@@ -71,11 +73,11 @@ function getAssetState (options, compilation) {
 
 function getEntryId (compilation) {
   if (compilation.options && typeof compilation.options.entry === 'string') {
-    return resolve.sync(compilation.options.entry);
+    return resolve.sync(compilation.options.entry, { extensions });
   }
   if (compilation.entries && compilation.entries.length) {
     try {
-      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { basedir: path.dirname(compilation.entries[0].context) });
+      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { basedir: path.dirname(compilation.entries[0].context), extensions });
     }
     catch (e) {
       return;
@@ -86,7 +88,7 @@ function getEntryId (compilation) {
     for (entry of entryMap.values()) {
       if (entry.length) {
         try {
-          return resolve.sync(entry[0].request, { basedir: path.dirname(entry[0].context) });
+          return resolve.sync(entry[0].request, { basedir: path.dirname(entry[0].context), extensions });
         }
         catch (e) {
           return;
@@ -305,7 +307,7 @@ module.exports = async function (content, map) {
       shadowDepth: 0,
       value: {   
         env: {
-          NODE_ENV: options.production ? 'production' : UNKNOWN,
+          NODE_ENV: typeof options.production === 'boolean' ? (options.production ? 'production' : 'dev') : UNKNOWN,
           [UNKNOWN]: true
         },
         [UNKNOWN]: true
@@ -369,7 +371,7 @@ module.exports = async function (content, map) {
 
   function requireWillFail (specifier) {
     try {
-      resolve.sync(specifier + '.js', { basedir: path.dirname(id) });
+      resolve.sync(specifier, { basedir: path.dirname(id), extensions });
       return false;
     }
     catch (e) {
@@ -563,14 +565,28 @@ module.exports = async function (content, map) {
               }
               else {
                 // branched require
+                const conditionValue = computeStaticValue(computed.test);
+                // inline the known branch if possible
+                if (conditionValue && 'value' in conditionValue) {
+                  if (conditionValue) {
+                    transformed = true;
+                    magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.then));
+                    return this.skip();
+                  }
+                  else {
+                    transformed = true;
+                    magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.else));
+                    return this.skip();
+                  }
+                }
                 // if one branch is a not found, Webpack fails the whole build
                 // so detect any not found now and inline the found branch
-                if (typeof computed.then === 'string' && requireWillFail(computed.then)) {
+                else if (typeof computed.then === 'string' && requireWillFail(computed.then)) {
                   transformed = true;
                   magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.else));
                   return this.skip();
                 }
-                if (typeof computed.else === 'string' && requireWillFail(computed.else)) {
+                else if (typeof computed.else === 'string' && requireWillFail(computed.else)) {
                   transformed = true;
                   magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.then));
                   return this.skip();
