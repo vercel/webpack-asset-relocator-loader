@@ -75,7 +75,7 @@ function getEntryId (compilation) {
   }
   if (compilation.entries && compilation.entries.length) {
     try {
-      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { filename: compilation.entries[0].context });
+      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { basedir: path.dirname(compilation.entries[0].context) });
     }
     catch (e) {
       return;
@@ -86,7 +86,7 @@ function getEntryId (compilation) {
     for (entry of entryMap.values()) {
       if (entry.length) {
         try {
-          return resolve.sync(entry[0].request, { filename: entry[0].context });
+          return resolve.sync(entry[0].request, { basedir: path.dirname(entry[0].context) });
         }
         catch (e) {
           return;
@@ -301,11 +301,6 @@ module.exports = async function (content, map) {
     process: {
       shadowDepth: 0,
       value: {
-        // TODO: consider making this an outward trace?
-        versions: {
-          node: 10,
-          [UNKNOWN]: true
-        },
         [UNKNOWN]: true   
       }
     }
@@ -366,7 +361,13 @@ module.exports = async function (content, map) {
   }
 
   function requireWillFail (specifier) {
-    return (specifier.startsWith('../') || specifier.startsWith('./')) && !existsSync(path.resolve(path.dirname(id), specifier));
+    try {
+      resolve.sync(specifier + '.js', { basedir: path.dirname(id) });
+      return false;
+    }
+    catch (e) {
+      return true;
+    }
   }
 
   function computeStaticValue (expr) {
@@ -712,7 +713,7 @@ module.exports = async function (content, map) {
       // attempt to inline known branch based on variable analysis
       else if (node.type === 'ConditionalExpression' && isStaticRequire(node.consequent) && isStaticRequire(node.alternate)) {
         const computed = computeStaticValue(node.test);
-        if (computed && computed.value) {
+        if (computed && 'value' in computed) {
           transformed = true;
           if (computed.value) {
             magicString.overwrite(node.start, node.end, code.substring(node.consequent.start, node.consequent.end));
@@ -721,6 +722,21 @@ module.exports = async function (content, map) {
             magicString.overwrite(node.start, node.end, code.substring(node.alternate.start, node.alternate.end));
           }
           return this.skip();
+        }
+        else {
+          // branched require
+          // if one branch is a not found, Webpack fails the whole build
+          // so detect any not found now and inline the found branch
+          if (requireWillFail(node.consequent.arguments[0].value)) {
+            transformed = true;
+            magicString.overwrite(node.start, node.end, code.substring(node.alternate.start, node.alternate.end));
+            return this.skip();
+          }
+          if (requireWillFail(node.alternate.arguments[0].value)) {
+            transformed = true;
+            magicString.overwrite(node.start, node.end, code.substring(node.consequent.start, node.consequent.end));
+            return this.skip();
+          }
         }
       }
       // Express templates:
