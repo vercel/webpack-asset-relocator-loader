@@ -42,7 +42,7 @@ function isExpressionReference(node, parent) {
 	return true;
 }
 
-const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|pkginfo|require\(\s*[^'"]|__non_webpack_require__|process\.versions\.node)/;
+const relocateRegEx = /(?<![a-z])(["']express|_\_dirname|_\_filename|require\.main|node-pre-gyp|bindings|define|pkginfo|require\(\s*([^'"]|['"]esm['"])|__non_webpack_require__|process\.versions\.node)/;
 
 const stateMap = new Map();
 let lastState;
@@ -714,9 +714,19 @@ module.exports = async function (content, map) {
       }
       else if (node.type === 'AssignmentExpression') {
         // path = require('path')
-        if (isStaticRequire(node.right) && node.right.arguments[0].value in staticModules &&
+        if (isStaticRequire(node.right) &&
+            node.right.arguments[0].value in staticModules &&
             node.left.type === 'Identifier' && scope.declarations[node.left.name]) {
           setKnownBinding(node.left.name, staticModules[node.right.arguments[0].value]);
+        }
+        // require = require('esm')(...)
+        else if (node.right.type === 'CallExpression' &&
+            isStaticRequire(node.right.callee) &&
+            node.right.callee.arguments[0].value === 'esm' &&
+            node.left.type === 'Identifier' && node.left.name === 'require') {
+          transformed = true;
+          magicString.overwrite(node.start, node.end, '');
+          return this.skip();
         }
       }
       // condition ? require('a') : require('b')
