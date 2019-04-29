@@ -41,7 +41,7 @@ Any `.node` files included will also support binary relocation.
             existingAssetNames: []
             wrapperCompatibility: false, // optional, default
             escapeNonAnalyzableRequires: false, // optional, default
-
+            debugLog: false, // optional, default
           }
         }
       }

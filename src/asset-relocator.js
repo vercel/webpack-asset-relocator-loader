@@ -198,7 +198,8 @@ module.exports = async function (content, map) {
     const name = assetState.assets[assetPath] ||
         (assetState.assets[assetPath] = getUniqueAssetName(outName, assetPath, assetState.assetNames));
 
-    // console.log('Emitting ' + assetPath + ' for module ' + id);
+    if (options.debugLog)
+      console.log('Emitting ' + assetPath + ' for static use in module ' + id);
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       const [source, stats] = await Promise.all([
         new Promise((resolve, reject) =>
@@ -223,6 +224,8 @@ module.exports = async function (content, map) {
     return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
   };
   const emitAssetDirectory = (assetDirPath) => {
+    if (options.debugLog)
+      console.log('Emitting directory ' + assetDirPath + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath);
     const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames));
     assetState.assets[assetDirPath] = name;
@@ -798,7 +801,13 @@ module.exports = async function (content, map) {
                 replacement = '__non_webpack_require__(' + replacement + ')';
               return replacement;
             case 'directory':
-              return emitAssetDirectory(path.resolve(value));
+              // do not emit asset directories higher than the package base itself
+              const resolved = path.resolve(value);
+              if (!pkgBase || resolved.startsWith(pkgBase))
+                return emitAssetDirectory(resolved);
+              else if (options.debugLog)
+                console.log('Skipping asset emission of ' + resolved + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
+
           }
         }
         staticChildNode = staticChildValue = undefined;
