@@ -801,7 +801,7 @@ module.exports = async function (content, map) {
                 replacement = '__non_webpack_require__(' + replacement + ')';
               return replacement;
             case 'directory':
-              // do not emit asset directories lower than the package base itself
+              // do not emit asset directories higher than the package base itself
               const resolved = path.resolve(value);
               if (!pkgBase || resolved.startsWith(pkgBase))
                 return emitAssetDirectory(resolved);
