@@ -369,7 +369,7 @@ module.exports = async function (content, map) {
 
   function requireWillFail (specifier) {
     try {
-      resolve.sync(specifier + '.js', { basedir: path.dirname(id) });
+      resolve.sync(specifier, { basedir: path.dirname(id) });
       return false;
     }
     catch (e) {
