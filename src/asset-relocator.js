@@ -398,6 +398,9 @@ module.exports = async function (content, map) {
   // greatest parent statically known leaf computation corresponds to an asset path
   let staticChildNode, staticChildValue, staticChildValueBindingsInstance;
 
+  // Express engine opt-out
+  let definedExpressEngines = false;
+
   // detect require('asdf');
   function isStaticRequire (node) {
     return node &&
@@ -748,19 +751,25 @@ module.exports = async function (content, map) {
       }
       // Express templates:
       // app.set("view engine", [name]) -> app.engine([name], require([name]).__express).set("view engine", [name])
+      // app.engine('name', ...) causes opt-out of rewrite
       else if (node.type === 'CallExpression' &&
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           getKnownBinding(node.callee.object.name) === EXPRESS &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'set' &&
-          node.arguments.length === 2 &&
-          node.arguments[0].type === 'Literal' &&
-          node.arguments[0].value === 'view engine') {
-        transformed = true;
-        const name = code.substring(node.arguments[1].start, node.arguments[1].end);
-        magicString.appendRight(node.callee.object.end, `.engine(${name}, require(${name}).__express)`);
-        return this.skip();
+          node.callee.property.type === 'Identifier') {
+        if (node.callee.property.name === 'engine') {
+          definedExpressEngines = true;
+        }
+        else if (node.callee.property.name === 'set' &&
+            node.arguments.length === 2 &&
+            node.arguments[0].type === 'Literal' &&
+            node.arguments[0].value === 'view engine' &&
+            !definedExpressEngines) {
+          transformed = true;
+          const name = code.substring(node.arguments[1].start, node.arguments[1].end);
+          magicString.appendRight(node.callee.object.end, `.engine(${name}, require(${name}).__express)`);
+          return this.skip();
+        }
       }
     },
     leave (node, parent) {
