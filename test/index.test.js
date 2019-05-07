@@ -36,7 +36,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
         filename: "index.js",
         libraryTarget: "commonjs2"
       },
-      externals: ['express', 'pug'],
+      externals: ['express', 'pug', '@ffmpeg-installer/ffmpeg'],
       module: {
         rules: [{
           test: /\.(js|mjs|node)$/,
