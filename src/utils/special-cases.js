@@ -123,4 +123,18 @@ module.exports = function (id, _code) {
       }
     };
   }
+  else if (id.endsWith('@ffmpeg-installer/ffmpeg/index.js') || global._unit && id.includes('ffmpeg')) {
+    return ({ ast, magicString }) => {
+      for (const statement of ast.body) {
+        if (statement.type === 'IfStatement' &&
+            statement.test.type === 'CallExpression' &&
+            statement.test.callee.type === 'Identifier' &&
+            statement.test.callee.name === 'verifyFile') {
+          magicString.overwrite(statement.test.start, statement.test.end, 'true');
+          statement.test = { type: 'Literal', value: true, start: statement.test.start, end: statement.test.end };
+          return true;
+        }
+      }
+    };
+  }
 };
