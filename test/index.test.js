@@ -36,7 +36,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
         filename: "index.js",
         libraryTarget: "commonjs2"
       },
-      externals: ['express', 'pug', '@ffmpeg-installer/ffmpeg'],
+      externals: ['express', 'pug'],
       module: {
         rules: [{
           test: /\.(js|mjs|node)$/,
@@ -45,7 +45,6 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
             loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
             options: {
               existingAssetNames: ['existing.txt'],
-              escapeNonAnalyzableRequires: true,
               wrapperCompatibility: true,
               debugLog: true,
               production: true

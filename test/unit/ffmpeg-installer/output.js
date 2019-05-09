@@ -94,9 +94,69 @@ console.log(path);
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(__dirname) {
+
+var os = __webpack_require__(2);
+var fs = __webpack_require__(3);
+var path = __webpack_require__(4);
+
+var verifyFile;
+
+var platform = (os.platform() + '-' + os.arch()) && '.';
+
+var packageName = '@ffmpeg-installer/' + platform;
+
+var binary = os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg.exe';
+
+var npm3Path = __dirname + '/unit';
+var npm2Path = __dirname + '/ffmpeg-installer';
+
+var npm3Binary = path.join(npm3Path, binary);
+var npm2Binary = __dirname + '/ffmpeg.exe';
+
+var npm3Package = path.join(npm3Path, 'package.json');
+var npm2Package = path.join(npm2Path, 'package.json');
+
+var ffmpegPath, packageJson;
+
+if (verifyFile(npm3Binary)) {
+    ffmpegPath = npm3Binary;
+} else if (verifyFile(__dirname + '/ffmpeg.exe')) {
+    ffmpegPath = __dirname + '/ffmpeg.exe';
+} else {
+    throw 'Could not find ffmpeg executable, tried "' + npm3Binary + '" and "' + npm2Binary + '"';
+}
+
+var version = packageJson.ffmpeg || packageJson.version;
+var url = packageJson.homepage;
+
+module.exports = {
+    path: ffmpegPath,
+    version: version,
+    url: url
+};
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports) {
 
-module.exports = require("@ffmpeg-installer/ffmpeg");
+module.exports = require("os");
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

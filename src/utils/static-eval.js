@@ -24,7 +24,10 @@
 // var unparse = require('escodegen').generate;
 
 module.exports = function (ast, vars = {}) {
-  return walk(ast);
+  let sawIdentifier = false;
+
+  const result = walk(ast);
+  return { result, sawIdentifier };
 
   // walk returns:
   // 1. Single known value: { value: value }
@@ -75,6 +78,7 @@ module.exports = function (ast, vars = {}) {
         if (!keyValue || 'test' in keyValue) return;
         var value = walk(prop.value);
         if (!value || 'test' in value) return;
+        if (value.value === UNKNOWN) return;
         obj[keyValue.value] = value.value;
       }
       return obj;
@@ -157,6 +161,7 @@ module.exports = function (ast, vars = {}) {
       return;
     }
     else if (node.type === 'Identifier') {
+      sawIdentifier = true;
       if (Object.hasOwnProperty.call(vars, node.name)) {
         const val = vars[node.name];
         if (val === UNKNOWN)

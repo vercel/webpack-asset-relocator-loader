@@ -40,7 +40,6 @@ Any `.node` files included will also support binary relocation.
             // defined that should not be emitted
             existingAssetNames: []
             wrapperCompatibility: false, // optional, default
-            escapeNonAnalyzableRequires: false, // optional, default
             // build for process.env.NODE_ENV = 'production'
             production: true, // optional, default is undefined
             debugLog: false, // optional, default
