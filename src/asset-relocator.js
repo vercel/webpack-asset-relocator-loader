@@ -591,6 +591,10 @@ module.exports = async function (content, map) {
             }
           }
         }
+        if (node.property.name === 'ensure') {
+          // leave require.ensure to webpack
+          return this.skip();
+        }
       }
       // var X = ... gets computed
       else if (parent && parent.type === 'VariableDeclarator' &&
