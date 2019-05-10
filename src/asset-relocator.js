@@ -116,6 +116,7 @@ function relAssetPath (context, options) {
 
 // unique symbol value to identify express instance in static analysis
 const EXPRESS = Symbol();
+const NBIND = Symbol();
 const staticModules = Object.assign(Object.create(null), {
   express: {
     default: function () {
@@ -130,7 +131,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
-  'nbind': nbind
+  'nbind': {
+    default: NBIND
+  }
 });
 
 module.exports = async function (content, map) {
@@ -349,7 +352,7 @@ module.exports = async function (content, map) {
     }
   }
 
-  let nbindId, pregypId, bindingsId, resolveFromId;
+  let pregypId, bindingsId, resolveFromId;
 
   if (isESM) {
     for (const decl of ast.body) {
@@ -370,8 +373,6 @@ module.exports = async function (content, map) {
               bindingsId = bindingId;
             else if (source === 'node-pre-gyp' || source === 'node-pre-gyp/lib/pre-binding' || source === 'node-pre-gyp/lib/pre-binding.js')
               pregypId = bindingId;
-            else if (source === 'nbind')
-              nbindId = bindingId;
             else if (source === 'resolve-from')
               resovleFromId = bindingId;
           }
@@ -657,8 +658,6 @@ module.exports = async function (content, map) {
                   bindingsId = decl.id.name;
                 else if (source === 'node-pre-gyp' || source === 'node-pre-gyp/lib/pre-binding' || source === 'node-pre-gyp/lib/pre-binding.js')
                   pregypId = decl.id.name;
-                else if (source === 'nbind')
-                  nbindId = decl.id.name;
               }
               // var { known } = require('known);
               else if (decl.id.type === 'ObjectPattern') {
@@ -733,10 +732,10 @@ module.exports = async function (content, map) {
         return this.skip();
       }
       // nbind.init(...) -> require('./resolved.node')
-      else if (nbindId && node.type === 'CallExpression' &&
+      else if (node.type === 'CallExpression' &&
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === nbindId &&
+          getKnownBinding(node.callee.object.name) === NBIND &&
           node.callee.property.type === 'Identifier' &&
           node.callee.property.name === 'init') {
         const staticValue = computePureStaticValue(node).result;
