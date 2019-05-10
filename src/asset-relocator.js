@@ -728,13 +728,13 @@ module.exports = async function (content, map) {
       }
       else if (node.type === 'AssignmentExpression') {
         // path = require('path')
-        if (isStaticRequire(node.right) &&
+        if (!isESM && isStaticRequire(node.right) &&
             node.right.arguments[0].value in staticModules &&
             node.left.type === 'Identifier' && scope.declarations[node.left.name]) {
           setKnownBinding(node.left.name, staticModules[node.right.arguments[0].value]);
         }
         // require = require('esm')(...)
-        else if (node.right.type === 'CallExpression' &&
+        else if (!isESM && node.right.type === 'CallExpression' &&
             isStaticRequire(node.right.callee) &&
             node.right.callee.arguments[0].value === 'esm' &&
             node.left.type === 'Identifier' && node.left.name === 'require') {
@@ -745,7 +745,7 @@ module.exports = async function (content, map) {
       }
       // condition ? require('a') : require('b')
       // attempt to inline known branch based on variable analysis
-      else if (node.type === 'ConditionalExpression' && isStaticRequire(node.consequent) && isStaticRequire(node.alternate)) {
+      else if (!isESM && node.type === 'ConditionalExpression' && isStaticRequire(node.consequent) && isStaticRequire(node.alternate)) {
         const computed = computeStaticValue(node.test);
         if (computed && 'value' in computed) {
           transformed = true;
