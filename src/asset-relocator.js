@@ -24,7 +24,7 @@ const os = require('os');
 const extensions = ['.js', '.json', '.node'];
 
 const staticPath = Object.assign({ default: path }, path);
-const { UNKNOWN } = evaluate;
+const { UNKNOWN, FUNCTION } = evaluate;
 
 function isIdentifierReference(node, parent) {
 	if (parent.type === 'MemberExpression') return parent.computed || node === parent.object;
@@ -138,10 +138,11 @@ module.exports = async function (content, map) {
     this.cacheable();
   this.async();
   const id = this.resourcePath;
+  const dir = path.dirname(id);
   if (id.endsWith('.node')) {
     const options = getOptions(this);
     const assetState = getAssetState(options, this._compilation);
-    const pkgBase = getPackageBase(this.resourcePath) || path.dirname(id);
+    const pkgBase = getPackageBase(this.resourcePath) || dir;
     await sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
 
     const name = getUniqueAssetName(id.substr(pkgBase.length + 1), id, assetState.assetNames);
@@ -322,7 +323,12 @@ module.exports = async function (content, map) {
   if (!isESM)
     knownBindings.require = {
       shadowDepth: 0,
-      value: UNKNOWN
+      value: {
+        [FUNCTION]: [UNKNOWN],
+        resolve (specifier) {
+          return resolve.sync(specifier, { basedir: dir, extensions });
+        }
+      }
     };
 
   function setKnownBinding (name, value) {
@@ -596,18 +602,38 @@ module.exports = async function (content, map) {
           return this.skip();
         }
       }
-      // var X = ... gets computed
+      else if (!isESM && node.type === 'CallExpression' &&
+               node.callee.type === 'MemberExpression' &&
+               node.callee.object.type === 'Identifier' &&
+               node.callee.object.name === 'require' &&
+               node.callee.property.type === 'Identifier' &&
+               node.callee.property.name === 'resolve' &&
+               node.callee.computed === false &&
+               node.arguments.length) {
+        // require.resolve analysis
+        staticChildValue = computePureStaticValue(node).result;
+        // if it computes, then we start backtracking
+        if (staticChildValue) {
+          staticChildNode = node;
+          staticChildValueBindingsInstance = staticBindingsInstance;
+          return this.skip();
+        }
+      }
+      // X = ... and
+      // var X = ... get computed
       else if (parent && parent.type === 'VariableDeclarator' &&
                parent.init === node && parent.id.type === 'Identifier' && 
+               (computed = computePureStaticValue(node).result) ||
+               parent && parent.type === 'AssignmentExpression' &&
+               parent.right === node && parent.left.type === 'Identifier' &&
                (computed = computePureStaticValue(node).result)) {
-        if (computed) {
-          if (!computed.test)
-            setKnownBinding(parent.id.name, computed.value);
-          if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
-            staticChildValue = computed;
-            staticChildNode = node;
-            staticChildValueBindingsInstance = staticBindingsInstance;
-          }
+        const bindingName = parent.id ? parent.id.name : parent.left.name;
+        if (!computed.test)
+          setKnownBinding(bindingName, computed.value);
+        if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
+          staticChildValue = computed;
+          staticChildNode = node;
+          staticChildValueBindingsInstance = staticBindingsInstance;
           return this.skip();
         }
       }
@@ -718,7 +744,7 @@ module.exports = async function (content, map) {
         if (staticValue && 'value' in staticValue)
           bindingInfo = staticValue.value;
         if (bindingInfo) {
-          bindingInfo.path = path.relative(path.dirname(id), bindingInfo.path);
+          bindingInfo.path = path.relative(dir, bindingInfo.path);
           transformed = true;
           const bindingPath = JSON.stringify(bindingInfo.path.replace(/\\/g, '/'));
           magicString.overwrite(node.start, node.end, `({ bind: require(${bindingPath}).NBind.bind_value, lib: require(${bindingPath}) })`);
@@ -774,9 +800,12 @@ module.exports = async function (content, map) {
         // no static value -> see if we should emit the asset if it exists
         // Currently we only handle files. In theory whole directories could also be emitted if necessary.
         if ('value' in staticChildValue) {
+          let resolved;
+          try { resolved = path.resolve(staticChildValue.value); }
+          catch (e) {}
           // don't emit the filename of this module itself or a direct uncontextual __dirname
-          if (staticChildValue.value !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
-            const inlineString = getInlined(inlineType(staticChildValue.value), staticChildValue.value);
+          if (resolved && resolved !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
+            const inlineString = getInlined(inlineType(resolved), resolved);
             if (inlineString) {
               magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
               transformed = true;
@@ -784,12 +813,18 @@ module.exports = async function (content, map) {
           }
         }
         else {
-          const thenInlineType = inlineType(staticChildValue.then);
-          const elseInlineType = inlineType(staticChildValue.else);
+          let resolvedThen;
+          try { resolvedThen = path.resolve(staticChildValue.then); }
+          catch (e) {}
+          let resolvedElse;
+          try { resolvedElse = path.resolve(staticChildValue.else); }
+          catch (e) {}
+          const thenInlineType = inlineType(resolvedThen);
+          const elseInlineType = inlineType(resolvedElse);
           // only inline conditionals when both branches are known inlinings
           if (thenInlineType && elseInlineType) {
-            const thenInlineString = getInlined(thenInlineType, staticChildValue.then);
-            const elseInlineString = getInlined(elseInlineType, staticChildValue.else);
+            const thenInlineString = getInlined(thenInlineType, resolvedThen);
+            const elseInlineString = getInlined(elseInlineType, resolvedElse);
             magicString.overwrite(
               staticChildNode.start, staticChildNode.end,
               `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
@@ -803,7 +838,8 @@ module.exports = async function (content, map) {
             try {
               stats = statSync(value);
             }
-            catch (e) {}
+            catch (e) {
+            }
           }
           else if (typeof value === 'boolean')
             return 'value';
@@ -814,9 +850,9 @@ module.exports = async function (content, map) {
         }
         function getInlined (inlineType, value) {
           switch (inlineType) {
-            case 'value': return String(value);
+            case 'value': return value;
             case 'file':
-              let replacement = emitAsset(path.resolve(value));
+              let replacement = emitAsset(value);
               // require('bindings')(...)
               // -> require(require('bindings')(...))
               if (staticChildValueBindingsInstance)
@@ -824,11 +860,10 @@ module.exports = async function (content, map) {
               return replacement;
             case 'directory':
               // do not emit asset directories higher than the package base itself
-              const resolved = path.resolve(value);
-              if (!pkgBase || resolved.startsWith(pkgBase))
-                return emitAssetDirectory(resolved);
+              if (!pkgBase || value.startsWith(pkgBase))
+                return emitAssetDirectory(value);
               else if (options.debugLog)
-                console.log('Skipping asset emission of ' + resolved + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
+                console.log('Skipping asset emission of ' + value + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
 
           }
         }

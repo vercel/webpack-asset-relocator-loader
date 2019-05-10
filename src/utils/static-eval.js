@@ -178,7 +178,9 @@ module.exports = function (ast, vars = {}) {
     else if (node.type === 'CallExpression') {
       var callee = walk(node.callee);
       if (!callee || 'test' in callee) return;
-      if (typeof callee.value !== 'function') return;
+      let fn = callee.value;
+      if (typeof fn === 'object') fn = fn[FUNCTION];
+      if (typeof fn !== 'function') return;
       
       var ctx = node.callee.object && walk(node.callee.object).value || null;
 
@@ -189,7 +191,7 @@ module.exports = function (ast, vars = {}) {
         args.push(x.value);
       }
       try {
-        const result = callee.value.apply(ctx, args);
+        const result = fn.apply(ctx, args);
         if (result === UNKNOWN)
           return;
         return { value: result };
@@ -343,3 +345,4 @@ module.exports = function (ast, vars = {}) {
 };
 
 const UNKNOWN = module.exports.UNKNOWN = Symbol();
+const FUNCTION = module.exports.FUNCTION = Symbol();
