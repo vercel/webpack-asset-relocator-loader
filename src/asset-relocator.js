@@ -802,6 +802,9 @@ module.exports = async function (content, map) {
           let resolved;
           try { resolved = path.resolve(staticChildValue.value); }
           catch (e) {}
+          if (resolved === '/') {
+            resolved = null;
+          }
           // don't emit the filename of this module itself or a direct uncontextual __dirname
           if (resolved && resolved !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
             const inlineString = getInlined(inlineType(resolved), resolved);

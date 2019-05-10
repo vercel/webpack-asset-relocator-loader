@@ -184,17 +184,36 @@ module.exports = function (ast, vars = {}) {
       
       var ctx = node.callee.object && walk(node.callee.object).value || null;
 
+      // we allow one conditional argument to create a conditional expression
+      var predicate;
       var args = [];
+      var argsElse;
       for (var i = 0, l = node.arguments.length; i < l; i++) {
         var x = walk(node.arguments[i]);
-        if (!x || 'test' in x) return;
-        args.push(x.value);
+        if (!x) return;
+        if ('test' in x) {
+          if (predicate) return;
+          predicate = x.test;
+          argsElse = args.concat([]);
+          args.push(x.then);
+          argsElse.push(x.else);
+        }
+        else {
+          args.push(x.value);
+          if (argsElse)
+            argsElse.push(x.value);
+        }
       }
       try {
         const result = fn.apply(ctx, args);
         if (result === UNKNOWN)
           return;
-        return { value: result };
+        if (!predicate)
+          return { value: result };
+        const resultElse = fn.apply(ctx, argsElse);
+        if (result === UNKNOWN)
+          return;
+        return { test: predicate, then: result, else: resultElse };
       }
       catch (e) {
         return;
