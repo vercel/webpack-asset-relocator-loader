@@ -169,9 +169,14 @@ const staticModules = Object.assign(Object.create(null), {
     default: RESOLVE_FROM
   }
 });
+const globalBindings = {
+  MONGOOSE_DRIVER_PATH: undefined
+};
+globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
 
 // call expression triggers
 const TRIGGER = Symbol();
+const WRAP_REQUIRE = Symbol();
 pregyp.find[TRIGGER] = true;
 const staticPath = staticModules.path;
 Object.keys(path).forEach(name => {
@@ -219,20 +224,6 @@ module.exports = async function (content, map) {
 
   // calculate the base-level package folder to load bindings from
   const pkgBase = getPackageBase(id);
-
-  let staticBindingsInstance = false;
-  function createBindings () {
-    return (opts = {}) => {
-      if (typeof opts === 'string')
-        opts = { bindings: opts };
-      if (!opts.path) {
-        opts.path = true;
-        staticBindingsInstance = true;
-      }
-      opts.module_root = pkgBase;
-      return bindings(opts);
-    };
-  }
 
   const emitAsset = (assetPath) => {
     // JS assets to support require(assetPath) and not fs-based handling
@@ -375,9 +366,18 @@ module.exports = async function (content, map) {
       value: {
         [FUNCTION] (specifier) {
           if (specifier === 'bindings') {
-            const bindings = createBindings();
-            bindings[TRIGGER] = true;
-            return bindings;
+            const fn = (opts = {}) => {
+              if (typeof opts === 'string')
+                opts = { bindings: opts };
+              if (!opts.path) {
+                opts.path = true;
+              }
+              opts.module_root = pkgBase;
+              return bindings(opts);
+            };
+            fn[WRAP_REQUIRE] = true;
+            fn[TRIGGER] = true;
+            return fn;
           }
           const m = staticModules[specifier];
           return m.default;
@@ -428,10 +428,12 @@ module.exports = async function (content, map) {
   }
 
   function computePureStaticValue (expr, computeBranches = true) {
-    staticBindingsInstance = false;
     const vars = Object.create(null);
     Object.keys(knownBindings).forEach(name => {
       vars[name] = getKnownBinding(name);
+    });
+    Object.keys(globalBindings).forEach(name => {
+      vars[name] = globalBindings[name];
     });
 
     // evaluate returns undefined for non-statically-analyzable
@@ -440,7 +442,7 @@ module.exports = async function (content, map) {
 
   // statically determinable leaves are tracked, and inlined when the
   // greatest parent statically known leaf computation corresponds to an asset path
-  let staticChildNode, staticChildValue, staticChildValueBindingsInstance;
+  let staticChildNode, staticChildValue;
 
   // Express engine opt-out
   let definedExpressEngines = false;
@@ -487,7 +489,6 @@ module.exports = async function (content, map) {
             // if it computes, then we start backtracking
             if (staticChildValue) {
               staticChildNode = node;
-              staticChildValueBindingsInstance = staticBindingsInstance;
               return this.skip();
             }
           }
@@ -561,25 +562,8 @@ module.exports = async function (content, map) {
         }
         // Special cases
         else if (parent.type === 'CallExpression' && parent.callee === node) {
-          // require('bindings')('asdf')
-          if (computed.value === 'bindings') {
-            let staticValue = computePureStaticValue(parent.arguments[0], false).result;
-            let bindingsValue;
-            if (staticValue && 'value' in staticValue) {
-              try {
-                bindingsValue = createBindings()(staticValue.value);
-              }
-              catch (err) {}
-            }
-            if (bindingsValue) {
-              staticChildValue = { value: bindingsValue };
-              staticChildNode = parent;
-              staticChildValueBindingsInstance = staticBindingsInstance;
-              return this.skip();
-            }
-          }
           // require('pkginfo')(module, ...string[])
-          else if (computed.value === 'pkginfo' &&
+          if (computed.value === 'pkginfo' &&
                   parent.arguments.length &&
                   parent.arguments[0].type === 'Identifier' &&
                   parent.arguments[0].name === 'module') {
@@ -659,10 +643,11 @@ module.exports = async function (content, map) {
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
           staticChildValue = computePureStaticValue(node, true).result;
-          // if it computes, then we start backtracking
+          // if it computes, then we start backtrackingelse 
           if (staticChildValue) {
             staticChildNode = node;
-            staticChildValueBindingsInstance = staticBindingsInstance;
+            if (staticChildValue.value && calleeValue.value[WRAP_REQUIRE])
+              emitStaticChildAsset(true);
             return this.skip();
           }
         }
@@ -683,7 +668,7 @@ module.exports = async function (content, map) {
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg.value) {
-                  const bindingInfo = nbind(arg);
+                  const bindingInfo = nbind(arg.value);
                   if (bindingInfo) {
                     bindingInfo.path = path.relative(dir, bindingInfo.path);
                     transformed = true;
@@ -718,7 +703,6 @@ module.exports = async function (content, map) {
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  staticChildValueBindingsInstance = staticBindingsInstance;
                   return this.skip();
                 }
               }
@@ -751,7 +735,6 @@ module.exports = async function (content, map) {
             if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
-              staticChildValueBindingsInstance = staticBindingsInstance;
               emitStaticChildAsset();
               return this.skip();
             }
@@ -781,7 +764,6 @@ module.exports = async function (content, map) {
           if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
             staticChildValue = computed;
             staticChildNode = node.right;
-            staticChildValueBindingsInstance = staticBindingsInstance;
             emitStaticChildAsset();
             return this.skip();
           }
@@ -830,11 +812,10 @@ module.exports = async function (content, map) {
       if (staticChildNode) {
         const curStaticValue = computePureStaticValue(node, true).result;
         if (curStaticValue) {
-          if ('value' in curStaticValue && typeof value !== 'symbol' ||
+          if ('value' in curStaticValue && typeof curStaticValue.value !== 'symbol' ||
               typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
             staticChildValue = curStaticValue;
             staticChildNode = node;
-            staticChildValueBindingsInstance = staticBindingsInstance;
             return;
           }
         }
@@ -857,7 +838,7 @@ module.exports = async function (content, map) {
     this.callback(null, code, map);
   });
 
-  function emitStaticChildAsset () {
+  function emitStaticChildAsset (wrapRequire = false) {
     if ('value' in staticChildValue) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
@@ -918,7 +899,7 @@ module.exports = async function (content, map) {
           let replacement = emitAsset(value);
           // require('bindings')(...)
           // -> require(require('bindings')(...))
-          if (staticChildValueBindingsInstance)
+          if (wrapRequire)
             replacement = '__non_webpack_require__(' + replacement + ')';
           return replacement;
         case 'directory':
