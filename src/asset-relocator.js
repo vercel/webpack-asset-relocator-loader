@@ -190,7 +190,8 @@ Object.keys(path).forEach(name => {
   staticPath[name] = staticPath.default[name] = fn;
 });
 
-const excludeAssets = ['.h', '.cmake', '.c', '.cpp', 'CHANGELOG.md', 'README.md'];
+const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
+const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 
 module.exports = async function (content, map) {
   if (this.cacheable)
@@ -285,7 +286,7 @@ module.exports = async function (content, map) {
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       const files = (await new Promise((resolve, reject) =>
         glob(assetDirPath + '/**/*', { mark: true, ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
-      )).filter(name => excludeAssets.every(exclude => !name.endsWith(exclude)));
+      )).filter(name => !excludeAssetExtensions.has(path.extname(name)) && !excludeAssetFiles.has(path.basename(name)));
       await Promise.all(files.map(async file => {
         // dont emit empty directories or ".js" files
         if (file.endsWith('/') || file.endsWith('.js'))
