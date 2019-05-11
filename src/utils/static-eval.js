@@ -184,7 +184,7 @@ module.exports = function (ast, vars = {}, computeBranches = true) {
       var callee = walk(node.callee);
       if (!callee || 'test' in callee) return;
       let fn = callee.value;
-      if (typeof fn === 'object') fn = fn[FUNCTION];
+      if (typeof fn === 'object' && fn !== null) fn = fn[FUNCTION];
       if (typeof fn !== 'function') return;
       
       var ctx = node.callee.object && walk(node.callee.object).value || null;

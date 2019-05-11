@@ -374,8 +374,11 @@ module.exports = async function (content, map) {
       shadowDepth: 0,
       value: {
         [FUNCTION] (specifier) {
-          if (specifier === 'bindings')
-            return createBindings();
+          if (specifier === 'bindings') {
+            const bindings = createBindings();
+            bindings[TRIGGER] = true;
+            return bindings;
+          }
           const m = staticModules[specifier];
           return m.default;
         },
@@ -478,7 +481,8 @@ module.exports = async function (content, map) {
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
           // Could add import.meta.url, even path-like environment variables
-          if (typeof (binding = getKnownBinding(node.name)) === 'string' && path.isAbsolute(binding)) {
+          if (typeof (binding = getKnownBinding(node.name)) === 'string' && path.isAbsolute(binding) ||
+              binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: binding };
             // if it computes, then we start backtracking
             if (staticChildValue) {
