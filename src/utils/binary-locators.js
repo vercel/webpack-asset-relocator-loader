@@ -80,5 +80,5 @@ function find(basePath = process.cwd()) {
   ]);
   return found;
 }
-exports.nbind = { init: find, find };
+exports.nbind = find;
 

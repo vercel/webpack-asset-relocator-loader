@@ -22,8 +22,6 @@ acorn = acorn.Parser.extend(stage3);
 const os = require('os');
 
 const extensions = ['.js', '.json', '.node'];
-
-const staticPath = Object.assign({ default: path }, path);
 const { UNKNOWN, FUNCTION } = evaluate;
 
 function isIdentifierReference(node, parent) {
@@ -115,15 +113,45 @@ function relAssetPath (context, options) {
 }
 
 // unique symbol value to identify express instance in static analysis
-const EXPRESS = Symbol();
-const NBIND = Symbol();
+const EXPRESS_SET = Symbol();
+const EXPRESS_ENGINE = Symbol();
+const NBIND_INIT = Symbol();
+const FS_FN = Symbol();
+const RESOLVE_FROM = Symbol();
+const fsSymbols = {
+  access: FS_FN,
+  accessSync: FS_FN,
+  createReadStream: FS_FN,
+  exists: FS_FN,
+  existsSync: FS_FN,
+  fstat: FS_FN,
+  fstatSync: FS_FN,
+  lstat: FS_FN,
+  lstatSync: FS_FN,
+  open: FS_FN,
+  readFile: FS_FN,
+  readFileSync: FS_FN,
+  stat: FS_FN,
+  statSync: FS_FN
+};
 const staticModules = Object.assign(Object.create(null), {
   express: {
     default: function () {
-      return EXPRESS;
+      return {
+        [UNKNOWN]: true,
+        set: EXPRESS_SET,
+        engine: EXPRESS_ENGINE
+      };
     }
   },
-  path: staticPath,
+  fs: {
+    default: fsSymbols,
+    ...fsSymbols
+  },
+  // populated below
+  path: {
+    default: {}
+  },
   os: {
     default: os,
     ...os
@@ -132,8 +160,26 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
   'nbind': {
-    default: NBIND
+    init: NBIND_INIT,
+    default: {
+      init: NBIND_INIT
+    }
+  },
+  'resolve-from': {
+    default: RESOLVE_FROM
   }
+});
+
+// call expression triggers
+const TRIGGER = Symbol();
+pregyp.find[TRIGGER] = true;
+const staticPath = staticModules.path;
+Object.keys(path).forEach(name => {
+  const fn = function () {
+    return path[name].apply(this, arguments);
+  };
+  fn[TRIGGER] = true;
+  staticPath[name] = staticPath.default[name] = fn;
 });
 
 module.exports = async function (content, map) {
@@ -323,16 +369,23 @@ module.exports = async function (content, map) {
     }
   });
 
-  if (!isESM)
+  if (!isESM) {
     knownBindings.require = {
       shadowDepth: 0,
       value: {
-        [FUNCTION]: [UNKNOWN],
+        [FUNCTION] (specifier) {
+          if (specifier === 'bindings')
+            return createBindings();
+          const m = staticModules[specifier];
+          return m.default;
+        },
         resolve (specifier) {
           return resolve.sync(specifier, { basedir: dir, extensions });
         }
       }
     };
+    knownBindings.require.value.resolve[TRIGGER] = true;
+  }
 
   function setKnownBinding (name, value) {
     // require is somewhat special in that we shadow it but don't
@@ -352,8 +405,6 @@ module.exports = async function (content, map) {
     }
   }
 
-  let pregypId, bindingsId, resolveFromId;
-
   if (isESM) {
     for (const decl of ast.body) {
       if (decl.type === 'ImportDeclaration') {
@@ -361,27 +412,19 @@ module.exports = async function (content, map) {
         const staticModule = staticModules[source];
         if (staticModule) {
           for (const impt of decl.specifiers) {
-            let bindingId;
             if (impt.type === 'ImportNamespaceSpecifier')
-              setKnownBinding(bindingId = impt.local.name, staticModule);
+              setKnownBinding(impt.local.name, staticModule);
             else if (impt.type === 'ImportDefaultSpecifier' && 'default' in staticModule)
-              setKnownBinding(bindingId = impt.local.name, staticModule.default);
+              setKnownBinding(impt.local.name, staticModule.default);
             else if (impt.type === 'ImportSpecifier' && impt.imported.name in staticModule)
-              setKnownBinding(bindingId = impt.local.name, staticModule[impt.imported.name]);
-
-            if (source === 'bindings')
-              bindingsId = bindingId;
-            else if (source === 'node-pre-gyp' || source === 'node-pre-gyp/lib/pre-binding' || source === 'node-pre-gyp/lib/pre-binding.js')
-              pregypId = bindingId;
-            else if (source === 'resolve-from')
-              resovleFromId = bindingId;
+              setKnownBinding(impt.local.name, staticModule[impt.imported.name]);
           }
         }
       }
     }
   }
 
-  function computePureStaticValue (expr) {
+  function computePureStaticValue (expr, computeBranches = true) {
     staticBindingsInstance = false;
     const vars = Object.create(null);
     Object.keys(knownBindings).forEach(name => {
@@ -389,7 +432,7 @@ module.exports = async function (content, map) {
     });
 
     // evaluate returns undefined for non-statically-analyzable
-    return evaluate(expr, vars);
+    return evaluate(expr, vars, computeBranches);
   }
 
   // statically determinable leaves are tracked, and inlined when the
@@ -429,16 +472,13 @@ module.exports = async function (content, map) {
       if (staticChildNode)
         return this.skip();
 
-      let computed;
-
       if (node.type === 'Identifier') {
         if (isIdentifierReference(node, parent)) {
           let binding;
           // detect asset leaf expression triggers (if not already)
-          // __dirname,  __filename, binary only currently as well as require('bindings')(...)
-          // Can add require.resolve, import.meta.url, even path-like environment variables
-          if (typeof (binding = getKnownBinding(node.name)) === 'string' &&
-              path.isAbsolute(binding) || node.name === pregypId || node.name === bindingsId) {
+          // __dirname,  __filename
+          // Could add import.meta.url, even path-like environment variables
+          if (typeof (binding = getKnownBinding(node.name)) === 'string' && path.isAbsolute(binding)) {
             staticChildValue = { value: binding };
             // if it computes, then we start backtracking
             if (staticChildValue) {
@@ -469,7 +509,7 @@ module.exports = async function (content, map) {
                knownBindings.require.shadowDepth === 0 &&
                node.arguments.length) {
         const expression = node.arguments[0];
-        const { result: computed, sawIdentifier } = computePureStaticValue(expression);
+        const { result: computed, sawIdentifier } = computePureStaticValue(expression, true);
         // no clue what the require is for, Webpack won't know either
         // -> turn it into a runtime dynamic require
         if (!computed) {
@@ -494,7 +534,7 @@ module.exports = async function (content, map) {
         // branched require, and it used a binding from our analysis
         // -> inline the computed values for Webpack
         else if (computed && typeof computed.then === 'string' && typeof computed.else === 'string' && sawIdentifier) {
-          const conditionValue = computePureStaticValue(computed.test).result;
+          const conditionValue = computePureStaticValue(computed.test, true).result;
           // inline the known branch if possible
           if (conditionValue && 'value' in conditionValue) {
             if (conditionValue) {
@@ -519,7 +559,7 @@ module.exports = async function (content, map) {
         else if (parent.type === 'CallExpression' && parent.callee === node) {
           // require('bindings')('asdf')
           if (computed.value === 'bindings') {
-            let staticValue = computePureStaticValue(parent.arguments[0]).result;
+            let staticValue = computePureStaticValue(parent.arguments[0], false).result;
             let bindingsValue;
             if (staticValue && 'value' in staticValue) {
               try {
@@ -603,102 +643,147 @@ module.exports = async function (content, map) {
           return this.skip();
         }
       }
-      else if (!isESM && node.type === 'CallExpression' &&
-               node.callee.type === 'MemberExpression' &&
-               node.callee.object.type === 'Identifier' &&
-               node.callee.object.name === 'require' &&
-               node.callee.property.type === 'Identifier' &&
-               node.callee.property.name === 'resolve' &&
-               node.callee.computed === false &&
-               node.arguments.length) {
-        // require.resolve analysis
-        staticChildValue = computePureStaticValue(node).result;
-        // if it computes, then we start backtracking
-        if (staticChildValue) {
-          staticChildNode = node;
-          staticChildValueBindingsInstance = staticBindingsInstance;
-          return this.skip();
+      // Call expression cases and asset triggers
+      // - fs triggers: fs.readFile(...)
+      // - require.resolve()
+      // - bindings()(...)
+      // - nodegyp()
+      // - etc.
+      else if (node.type === 'CallExpression') {
+        const calleeValue = computePureStaticValue(node.callee, false).result;
+        // if we have a direct pure static function,
+        // and that function has a [TRIGGER] symbol -> trigger asset emission from it
+        if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
+          staticChildValue = computePureStaticValue(node, true).result;
+          // if it computes, then we start backtracking
+          if (staticChildValue) {
+            staticChildNode = node;
+            staticChildValueBindingsInstance = staticBindingsInstance;
+            return this.skip();
+          }
         }
-      }
-      // X = ... and
-      // var X = ... get computed
-      else if (parent && parent.type === 'VariableDeclarator' &&
-               parent.init === node && parent.id.type === 'Identifier' && 
-               (computed = computePureStaticValue(node).result) ||
-               parent && parent.type === 'AssignmentExpression' &&
-               parent.right === node && parent.left.type === 'Identifier' &&
-               (computed = computePureStaticValue(node).result)) {
-        const bindingName = parent.id ? parent.id.name : parent.left.name;
-        if (!computed.test)
-          setKnownBinding(bindingName, computed.value);
-        if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
-          staticChildValue = computed;
-          staticChildNode = node;
-          staticChildValueBindingsInstance = staticBindingsInstance;
-          return this.skip();
+        // handle well-known function symbol cases
+        else if (calleeValue && typeof calleeValue.value === 'symbol') {
+          switch (calleeValue.value) {
+            // resolveFrom(__dirname, ...) -> require.resolve(...)
+            case RESOLVE_FROM:
+              if (node.arguments.length === 2 && node.arguments[0].type === 'Identifier' &&
+                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+                transformed = true;
+                magicString.overwrite(node.start, node.arguments[0].end + 1, 'require.resolve(');
+                return this.skip();
+              }
+            break;
+            // nbind.init(...) -> require('./resolved.node')
+            case NBIND_INIT:
+              if (node.arguments.length) {
+                const arg = computePureStaticValue(node.arguments[0], false).result;
+                if (arg.value) {
+                  const bindingInfo = nbind(arg);
+                  if (bindingInfo) {
+                    bindingInfo.path = path.relative(dir, bindingInfo.path);
+                    transformed = true;
+                    const bindingPath = JSON.stringify(bindingInfo.path.replace(/\\/g, '/'));
+                    magicString.overwrite(node.start, node.end, `({ bind: require(${bindingPath}).NBind.bind_value, lib: require(${bindingPath}) })`);
+                    return this.skip();
+                  }
+                }
+              }
+            break;
+            // Express templates:
+            // app.set("view engine", [name]) -> app.engine([name], require([name]).__express).set("view engine", [name])
+            case EXPRESS_SET:
+              if (node.arguments.length === 2 &&
+                  node.arguments[0].type === 'Literal' &&
+                  node.arguments[0].value === 'view engine' &&
+                  !definedExpressEngines) {
+                transformed = true;
+                const name = code.substring(node.arguments[1].start, node.arguments[1].end);
+                magicString.appendRight(node.callee.object.end, `.engine(${name}, require(${name}).__express)`);
+                return this.skip();
+              }
+            break;
+            // app.engine('name', ...) causes opt-out of express rewrite
+            case EXPRESS_ENGINE:
+              definedExpressEngines = true;
+            break;
+
+            case FS_FN:
+              if (node.arguments[0]) {
+                staticChildValue = computePureStaticValue(node.arguments[0], true).result;
+                // if it computes, then we start backtracking
+                if (staticChildValue) {
+                  staticChildNode = node.arguments[0];
+                  staticChildValueBindingsInstance = staticBindingsInstance;
+                  return this.skip();
+                }
+              }
+            break;
+          }
         }
       }
       else if (node.type === 'VariableDeclaration') {
         for (const decl of node.declarations) {
-          let binding;
-          if (!isESM && isStaticRequire(decl.init)) {
-            const source = decl.init.arguments[0].value;
-            if (source === 'resolve-from')
-              resolveFromId = decl.id.name;
-            let staticModule;
-            if (source === 'bindings')
-              staticModule = { default: createBindings() };
-            else
-              staticModule = staticModules[source];
-            if (staticModule) {
-              // var known = require('known');
-              if (decl.id.type === 'Identifier') {
-                setKnownBinding(decl.id.name, staticModule.default);
-                if (source === 'bindings')
-                  bindingsId = decl.id.name;
-                else if (source === 'node-pre-gyp' || source === 'node-pre-gyp/lib/pre-binding' || source === 'node-pre-gyp/lib/pre-binding.js')
-                  pregypId = decl.id.name;
-              }
-              // var { known } = require('known);
-              else if (decl.id.type === 'ObjectPattern') {
-                for (const prop of decl.id.properties) {
-                  if (prop.type !== 'Property' ||
-                      prop.key.type !== 'Identifier' ||
-                      prop.value.type !== 'Identifier' ||
-                      !(prop.key.name in staticModule))
-                    continue;
-                  setKnownBinding(prop.value.name, staticModule[prop.key.name]);
-                }
+          if (!decl.init) continue;
+          const computed = computePureStaticValue(decl.init, false).result;
+          if (computed && 'value' in computed) {
+            // var known = ...;
+            if (decl.id.type === 'Identifier') {
+              setKnownBinding(decl.id.name, computed.value);
+            }
+            // var { known } = ...;
+            else if (decl.id.type === 'ObjectPattern') {
+              for (const prop of decl.id.properties) {
+                if (prop.type !== 'Property' ||
+                    prop.key.type !== 'Identifier' ||
+                    prop.value.type !== 'Identifier' ||
+                    typeof computed.value !== 'object' ||
+                    computed.value === null ||
+                    !(prop.key.name in computed.value))
+                  continue;
+                setKnownBinding(prop.value.name, computed.value[prop.key.name]);
               }
             }
-          }
-          // var { knownProp } = known;
-          else if (decl.id.type === 'ObjectPattern' &&
-                   decl.init && decl.init.type === 'Identifier' &&
-                   (binding = getKnownBinding(decl.init.name)) !== undefined) {
-            for (const prop of decl.id.properties) {
-              if (prop.type !== 'Property' ||
-                prop.key.type !== 'Identifier' ||
-                prop.value.type !== 'Identifier' ||
-                typeof binding !== 'object' ||
-                typeof binding !== 'function' ||
-                binding === null ||
-                !(prop.key.name in binding))
-              continue;
-              setKnownBinding(prop.value.name, binding[prop.key.name]);
+            if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
+              staticChildValue = computed;
+              staticChildNode = decl.init;
+              staticChildValueBindingsInstance = staticBindingsInstance;
+              emitStaticChildAsset();
+              return this.skip();
             }
           }
         }
       }
       else if (node.type === 'AssignmentExpression') {
-        // path = require('path')
-        if (!isESM && isStaticRequire(node.right) &&
-            node.right.arguments[0].value in staticModules &&
-            node.left.type === 'Identifier' && scope.declarations[node.left.name]) {
-          setKnownBinding(node.left.name, staticModules[node.right.arguments[0].value]);
+        const computed = computePureStaticValue(node.right, false).result;
+        if (computed && 'value' in computed) {
+          // var known = ...
+          if (node.left.type === 'Identifier') {
+            setKnownBinding(node.left.name, computed.value);
+          }
+          // var { known } = ...
+          else if (node.left.type === 'ObjectPattern') {
+            for (const prop of node.left.properties) {
+              if (prop.type !== 'Property' ||
+                  prop.key.type !== 'Identifier' ||
+                  prop.value.type !== 'Identifier' ||
+                  typeof computed.value !== 'object' ||
+                  computed.value === null ||
+                  !(prop.key.name in computed.value))
+                continue;
+              setKnownBinding(prop.value.name, computed.value[prop.key.name]);
+            }
+          }
+          if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
+            staticChildValue = computed;
+            staticChildNode = node.right;
+            staticChildValueBindingsInstance = staticBindingsInstance;
+            emitStaticChildAsset();
+            return this.skip();
+          }
         }
         // require = require('esm')(...)
-        else if (!isESM && node.right.type === 'CallExpression' &&
+        if (!isESM && node.right.type === 'CallExpression' &&
             isStaticRequire(node.right.callee) &&
             node.right.callee.arguments[0].value === 'esm' &&
             node.left.type === 'Identifier' && node.left.name === 'require') {
@@ -710,7 +795,7 @@ module.exports = async function (content, map) {
       // condition ? require('a') : require('b')
       // attempt to inline known branch based on variable analysis
       else if (!isESM && node.type === 'ConditionalExpression' && isStaticRequire(node.consequent) && isStaticRequire(node.alternate)) {
-        const computed = computePureStaticValue(node.test).result;
+        const computed = computePureStaticValue(node.test, false).result;
         if (computed && 'value' in computed) {
           transformed = true;
           if (computed.value) {
@@ -719,56 +804,6 @@ module.exports = async function (content, map) {
           else {
             magicString.overwrite(node.start, node.end, code.substring(node.alternate.start, node.alternate.end));
           }
-          return this.skip();
-        }
-      }
-      // resolveFrom(__dirname, ...) -> require.resolve(...)
-      else if (resolveFromId && node.type === 'CallExpression' &&
-          node.callee.type === 'Identifier' && node.callee.name === resolveFromId &&
-          node.arguments.length === 2 && node.arguments[0].type === 'Identifier' &&
-          node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
-        transformed = true;
-        magicString.overwrite(node.start, node.arguments[0].end + 1, 'require.resolve(');
-        return this.skip();
-      }
-      // nbind.init(...) -> require('./resolved.node')
-      else if (node.type === 'CallExpression' &&
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          getKnownBinding(node.callee.object.name) === NBIND &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'init') {
-        const staticValue = computePureStaticValue(node).result;
-        let bindingInfo;
-        if (staticValue && 'value' in staticValue)
-          bindingInfo = staticValue.value;
-        if (bindingInfo) {
-          bindingInfo.path = path.relative(dir, bindingInfo.path);
-          transformed = true;
-          const bindingPath = JSON.stringify(bindingInfo.path.replace(/\\/g, '/'));
-          magicString.overwrite(node.start, node.end, `({ bind: require(${bindingPath}).NBind.bind_value, lib: require(${bindingPath}) })`);
-          return this.skip();
-        }
-      }
-      // Express templates:
-      // app.set("view engine", [name]) -> app.engine([name], require([name]).__express).set("view engine", [name])
-      // app.engine('name', ...) causes opt-out of rewrite
-      else if (node.type === 'CallExpression' &&
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          getKnownBinding(node.callee.object.name) === EXPRESS &&
-          node.callee.property.type === 'Identifier') {
-        if (node.callee.property.name === 'engine') {
-          definedExpressEngines = true;
-        }
-        else if (node.callee.property.name === 'set' &&
-            node.arguments.length === 2 &&
-            node.arguments[0].type === 'Literal' &&
-            node.arguments[0].value === 'view engine' &&
-            !definedExpressEngines) {
-          transformed = true;
-          const name = code.substring(node.arguments[1].start, node.arguments[1].end);
-          magicString.appendRight(node.callee.object.end, `.engine(${name}, require(${name}).__express)`);
           return this.skip();
         }
       }
@@ -789,87 +824,18 @@ module.exports = async function (content, map) {
       // computing a static expression outward
       // -> compute and backtrack
       if (staticChildNode) {
-        const curStaticValue = computePureStaticValue(node).result;
+        const curStaticValue = computePureStaticValue(node, true).result;
         if (curStaticValue) {
-          staticChildValue = curStaticValue;
-          staticChildNode = node;
-          staticChildValueBindingsInstance = staticBindingsInstance;
-          return;
+          if ('value' in curStaticValue && typeof value !== 'symbol' ||
+              typeof curStaticValue.then !== 'symbol' && typeof curStaticValue.else !== 'symbol') {
+            staticChildValue = curStaticValue;
+            staticChildNode = node;
+            staticChildValueBindingsInstance = staticBindingsInstance;
+            return;
+          }
         }
         // no static value -> see if we should emit the asset if it exists
-        // Currently we only handle files. In theory whole directories could also be emitted if necessary.
-        if ('value' in staticChildValue) {
-          let resolved;
-          try { resolved = path.resolve(staticChildValue.value); }
-          catch (e) {}
-          if (resolved === '/') {
-            resolved = null;
-          }
-          // don't emit the filename of this module itself or a direct uncontextual __dirname
-          if (resolved && resolved !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
-            const inlineString = getInlined(inlineType(resolved), resolved);
-            if (inlineString) {
-              magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
-              transformed = true;
-            }
-          }
-        }
-        else {
-          let resolvedThen;
-          try { resolvedThen = path.resolve(staticChildValue.then); }
-          catch (e) {}
-          let resolvedElse;
-          try { resolvedElse = path.resolve(staticChildValue.else); }
-          catch (e) {}
-          const thenInlineType = inlineType(resolvedThen);
-          const elseInlineType = inlineType(resolvedElse);
-          // only inline conditionals when both branches are known inlinings
-          if (thenInlineType && elseInlineType) {
-            const thenInlineString = getInlined(thenInlineType, resolvedThen);
-            const elseInlineString = getInlined(elseInlineType, resolvedElse);
-            magicString.overwrite(
-              staticChildNode.start, staticChildNode.end,
-              `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
-            );
-            transformed = true;
-          }
-        }
-        function inlineType (value) {
-          let stats;
-          if (typeof value === 'string') {
-            try {
-              stats = statSync(value);
-            }
-            catch (e) {
-            }
-          }
-          else if (typeof value === 'boolean')
-            return 'value';
-          if (stats && stats.isFile())
-            return 'file';
-          else if (stats && stats.isDirectory())
-            return 'directory';
-        }
-        function getInlined (inlineType, value) {
-          switch (inlineType) {
-            case 'value': return value;
-            case 'file':
-              let replacement = emitAsset(value);
-              // require('bindings')(...)
-              // -> require(require('bindings')(...))
-              if (staticChildValueBindingsInstance)
-                replacement = '__non_webpack_require__(' + replacement + ')';
-              return replacement;
-            case 'directory':
-              // do not emit asset directories higher than the package base itself
-              if (!pkgBase || value.startsWith(pkgBase))
-                return emitAssetDirectory(value);
-              else if (options.debugLog)
-                console.log('Skipping asset emission of ' + value + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
-
-          }
-        }
-        staticChildNode = staticChildValue = undefined;
+        emitStaticChildAsset();
       }
     }
   });
@@ -886,6 +852,82 @@ module.exports = async function (content, map) {
     }
     this.callback(null, code, map);
   });
+
+  function emitStaticChildAsset () {
+    if ('value' in staticChildValue) {
+      let resolved;
+      try { resolved = path.resolve(staticChildValue.value); }
+      catch (e) {}
+      // TODO: better work out this restriction model
+      if (resolved === '/') {
+        resolved = null;
+      }
+      // don't emit the filename of this module itself or a direct uncontextual __dirname
+      if (resolved && resolved !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
+        const inlineString = getInlined(inlineType(resolved), resolved);
+        if (inlineString) {
+          magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+          transformed = true;
+        }
+      }
+    }
+    else {
+      let resolvedThen;
+      try { resolvedThen = path.resolve(staticChildValue.then); }
+      catch (e) {}
+      let resolvedElse;
+      try { resolvedElse = path.resolve(staticChildValue.else); }
+      catch (e) {}
+      const thenInlineType = inlineType(resolvedThen);
+      const elseInlineType = inlineType(resolvedElse);
+      // only inline conditionals when both branches are known inlinings
+      if (thenInlineType && elseInlineType) {
+        const thenInlineString = getInlined(thenInlineType, resolvedThen);
+        const elseInlineString = getInlined(elseInlineType, resolvedElse);
+        magicString.overwrite(
+          staticChildNode.start, staticChildNode.end,
+          `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
+        );
+        transformed = true;
+      }
+    }
+    function inlineType (value) {
+      let stats;
+      if (typeof value === 'string') {
+        try {
+          stats = statSync(value);
+        }
+        catch (e) {
+        }
+      }
+      else if (typeof value === 'boolean')
+        return 'value';
+      if (stats && stats.isFile())
+        return 'file';
+      else if (stats && stats.isDirectory())
+        return 'directory';
+    }
+    function getInlined (inlineType, value) {
+      switch (inlineType) {
+        case 'value': return value;
+        case 'file':
+          let replacement = emitAsset(value);
+          // require('bindings')(...)
+          // -> require(require('bindings')(...))
+          if (staticChildValueBindingsInstance)
+            replacement = '__non_webpack_require__(' + replacement + ')';
+          return replacement;
+        case 'directory':
+          // do not emit asset directories higher than the package base itself
+          if (!pkgBase || value.startsWith(pkgBase))
+            return emitAssetDirectory(value);
+          else if (options.debugLog)
+            console.log('Skipping asset emission of ' + value + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
+
+      }
+    }
+    staticChildNode = staticChildValue = undefined;
+  }
 };
 
 module.exports.raw = true;

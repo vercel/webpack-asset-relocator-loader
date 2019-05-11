@@ -23,7 +23,7 @@
 
 // var unparse = require('escodegen').generate;
 
-module.exports = function (ast, vars = {}) {
+module.exports = function (ast, vars = {}, computeBranches = true) {
   let sawIdentifier = false;
 
   const result = walk(ast);
@@ -87,12 +87,17 @@ module.exports = function (ast, vars = {}) {
       var l = walk(node.left);
       if (!l) return;
       var r = walk(node.right);
-      if (!r) return;
+      if (!r) {
+        // A || UNKNOWN -> A if A is truthy
+        if (!('test' in l) && node.operator === '||' && l.value) return node.right;
+        return;
+      }
 
       if ('test' in l && 'test' in r)
         return;
 
       var op = node.operator;
+
       // support right branches only
       if ('test' in l) {
         r = r.value;
@@ -261,6 +266,9 @@ module.exports = function (ast, vars = {}) {
       var val = walk(node.test);
       if (val && 'value' in val)
         return val.value ? walk(node.consequent) : walk(node.alternate);
+
+      if (!computeBranches)
+        return;
 
       var thenValue = walk(node.consequent);
       if (!thenValue || 'test' in thenValue)

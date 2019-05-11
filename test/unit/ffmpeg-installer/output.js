@@ -134,7 +134,7 @@ var version = packageJson.ffmpeg || packageJson.version;
 var url = packageJson.homepage;
 
 module.exports = {
-    path: ffmpegPath,
+    path: __dirname + '/ffmpeg.exe',
     version: version,
     url: url
 };
