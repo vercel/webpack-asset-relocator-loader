@@ -118,6 +118,7 @@ const EXPRESS_ENGINE = Symbol();
 const NBIND_INIT = Symbol();
 const FS_FN = Symbol();
 const RESOLVE_FROM = Symbol();
+const BINDINGS = Symbol();
 const fsSymbols = {
   access: FS_FN,
   accessSync: FS_FN,
@@ -135,6 +136,9 @@ const fsSymbols = {
   statSync: FS_FN
 };
 const staticModules = Object.assign(Object.create(null), {
+  bindings: {
+    default: BINDINGS
+  },
   express: {
     default: function () {
       return {
@@ -176,7 +180,6 @@ globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = glob
 
 // call expression triggers
 const TRIGGER = Symbol();
-const WRAP_REQUIRE = Symbol();
 pregyp.find[TRIGGER] = true;
 const staticPath = staticModules.path;
 Object.keys(path).forEach(name => {
@@ -187,7 +190,7 @@ Object.keys(path).forEach(name => {
   staticPath[name] = staticPath.default[name] = fn;
 });
 
-const assetExcludes = ['.h', '.cmake', '.c', '.cpp', 'CHANGELOG.md', 'README.md'];
+const excludeAssets = ['.h', '.cmake', '.c', '.cpp', 'CHANGELOG.md', 'README.md'];
 
 module.exports = async function (content, map) {
   if (this.cacheable)
@@ -282,7 +285,7 @@ module.exports = async function (content, map) {
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       const files = (await new Promise((resolve, reject) =>
         glob(assetDirPath + '/**/*', { mark: true, ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
-      )).filter(name => assetExcludes.every(exclude => !name.endsWith(exclude)));
+      )).filter(name => excludeAssets.every(exclude => !name.endsWith(exclude)));
       await Promise.all(files.map(async file => {
         // dont emit empty directories or ".js" files
         if (file.endsWith('/') || file.endsWith('.js'))
@@ -367,20 +370,6 @@ module.exports = async function (content, map) {
       shadowDepth: 0,
       value: {
         [FUNCTION] (specifier) {
-          if (specifier === 'bindings') {
-            const fn = (opts = {}) => {
-              if (typeof opts === 'string')
-                opts = { bindings: opts };
-              if (!opts.path) {
-                opts.path = true;
-              }
-              opts.module_root = pkgBase;
-              return bindings(opts);
-            };
-            fn[WRAP_REQUIRE] = true;
-            fn[TRIGGER] = true;
-            return fn;
-          }
           const m = staticModules[specifier];
           return m.default;
         },
@@ -648,14 +637,42 @@ module.exports = async function (content, map) {
           // if it computes, then we start backtrackingelse 
           if (staticChildValue) {
             staticChildNode = node;
-            if (staticChildValue.value && calleeValue.value[WRAP_REQUIRE])
-              emitStaticChildAsset(true);
             return this.skip();
           }
         }
         // handle well-known function symbol cases
         else if (calleeValue && typeof calleeValue.value === 'symbol') {
           switch (calleeValue.value) {
+            // require('bindings')(...)
+            case BINDINGS:
+              if (node.arguments.length) {
+                const arg = computePureStaticValue(node.arguments[0], false).result;
+                if (arg.value) {
+                  let staticBindingsInstance = false;
+                  let opts;
+                  if (typeof arg.value === 'object')
+                    opts = arg.value;
+                  else if (typeof arg.value === 'string')
+                    opts = { bindings: arg.value };
+                  if (!opts.path) {
+                    staticBindingsInstance = true;
+                    opts.path = true;
+                  }
+                  opts.module_root = pkgBase;
+                  let resolved;
+                  try {
+                    resolved = bindings(opts);
+                  }
+                  catch (e) {}
+                  if (resolved) {
+                    staticChildValue = { value: resolved };
+                    staticChildNode = node;
+                    emitStaticChildAsset(staticBindingsInstance);
+                    return this.skip();
+                  }
+                }
+              }
+            break;
             // resolveFrom(__dirname, ...) -> require.resolve(...)
             case RESOLVE_FROM:
               if (node.arguments.length === 2 && node.arguments[0].type === 'Identifier' &&
