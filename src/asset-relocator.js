@@ -24,25 +24,37 @@ const os = require('os');
 const extensions = ['.js', '.json', '.node'];
 const { UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } = evaluate;
 
-function isIdentifierReference(node, parent) {
-	if (parent.type === 'MemberExpression') return parent.computed || node === parent.object;
-
-	// disregard the `bar` in { bar: foo }
-	if (parent.type === 'Property') return node === parent.value;
-
-	// disregard the `bar` in `class Foo { bar () {...} }`
-	if (parent.type === 'MethodDefinition') return false;
-
-	// disregard the `bar` in `export { foo as bar }`
-  if (parent.type === 'ExportSpecifier') return false;
-
-  // disregard the `bar` in var bar = asdf
-  if (parent.type === 'VariableDeclarator') return parent.id !== node;
-
-  // disregard the `bar` in `function (bar) {}`
-  if (parent.type === 'FunctionExpression' || parent.type === 'FunctionDeclaration' || parent.type === 'ArrowFunctionExpression') return false;
-
-	return true;
+function isIdentifierRead(node, parent) {
+  switch (parent.type) {
+    case 'ObjectPattern':
+    case 'ArrayPattern':
+      // Note: default values not currently supported
+      return false;
+    // disregard `bar` in `bar = thing()`
+    case 'AssignmentExpression':
+      return parent.right === node;
+    case 'MemberExpression':
+      return parent.computed || node === parent.object;
+    // disregard the `bar` in `{ bar: foo }`
+    case 'Property':
+      return node === parent.value;
+    // disregard the `bar` in `class Foo { bar () {...} }`
+    case 'MethodDefinition':
+      return false;
+    // disregard the `bar` in var bar = asdf
+    case 'VariableDeclarator':
+      return parent.id !== node;
+    // disregard the `bar` in `export { foo as bar }`
+    case 'ExportSpecifier':
+      return false;
+    // disregard the `bar` in `function (bar) {}`
+    case 'FunctionExpression':
+    case 'FunctionDeclaration':
+    case 'ArrowFunctionExpression':
+      return false;
+    default:
+      return true;
+  }
 }
 
 const stateMap = new Map();
@@ -527,7 +539,7 @@ module.exports = async function (content, map) {
         return this.skip();
 
       if (node.type === 'Identifier') {
-        if (isIdentifierReference(node, parent)) {
+        if (isIdentifierRead(node, parent)) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
