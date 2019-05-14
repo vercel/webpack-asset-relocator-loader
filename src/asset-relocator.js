@@ -382,7 +382,10 @@ module.exports = async function (content, map) {
         else {
           assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).slice(1, -1) + "'";
         }
-        assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
+        if (wildcard.type === 'SpreadElement')
+          assetExpressions += " + " + code.substring(wildcard.argument.start, wildcard.argument.end) + ".join('/')";
+        else
+          assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
       }
       if (curPattern.length) {
         assetExpressions += " + \'" + JSON.stringify(curPattern).slice(1, -1) + "'";

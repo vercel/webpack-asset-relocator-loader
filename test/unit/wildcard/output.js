@@ -90,7 +90,9 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+
 fs.readFileSync(__dirname + '/assets/' + unknown + '.txt');
+fs.readFileSync(__dirname + '/assets/' + unknown.join('/') + '.txt');
 
 /* WEBPACK VAR INJECTION */}.call(this, "/"))
 
