@@ -96,7 +96,7 @@ loader(__dirname + '/asset2.txt');
 
 unknown(__dirname + '/asset1.txt');
 
-const thing = asdf + (__dirname + '/asset3.txt');
+const thing = asdf(__dirname + '/asset3.txt');
 /* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })

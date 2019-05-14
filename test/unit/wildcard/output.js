@@ -87,17 +87,18 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+fs.readFileSync(__dirname + '/assets/' + unknown + '.txt');
+
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
+
+/***/ }),
+/* 1 */
 /***/ (function(module, exports) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {const asset1 = __dirname + '/asset1.txt';
-
-function loader () {}
-loader(__dirname + '/asset2.txt');
-
-unknown(__dirname + '/asset1.txt');
-
-const thing = asdf(__dirname + '/asset3.txt');
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

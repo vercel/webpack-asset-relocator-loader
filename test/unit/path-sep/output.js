@@ -87,12 +87,20 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(__dirname) {const { sep } = __webpack_require__(1);
+
+const X = sep;
+
+fs.readFileSync(__dirname + '/asset.txt');
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
+
+/***/ }),
+/* 1 */
 /***/ (function(module, exports) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {var _nbind$init = nbind.init(__dirname + '/unit'),
-    bind = _nbind$init.bind,
-    lib = _nbind$init.lib;
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

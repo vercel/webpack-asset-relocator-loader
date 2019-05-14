@@ -22,7 +22,7 @@ acorn = acorn.Parser.extend(stage3);
 const os = require('os');
 
 const extensions = ['.js', '.json', '.node'];
-const { UNKNOWN, FUNCTION } = evaluate;
+const { UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } = evaluate;
 
 function isIdentifierReference(node, parent) {
 	if (parent.type === 'MemberExpression') return parent.computed || node === parent.object;
@@ -112,6 +112,15 @@ function relAssetPath (context, options) {
   return '../'.repeat(backtrackDepth) + assetBase(options);
 }
 
+const staticProcess = {
+  cwd: process.cwd,
+  env: {
+    NODE_ENV: UNKNOWN,
+    [UNKNOWN]: true
+  },
+  [UNKNOWN]: true
+};
+
 // unique symbol value to identify express instance in static analysis
 const EXPRESS_SET = Symbol();
 const EXPRESS_ENGINE = Symbol();
@@ -152,6 +161,10 @@ const staticModules = Object.assign(Object.create(null), {
     default: fsSymbols,
     ...fsSymbols
   },
+  process: {
+    default: staticProcess,
+    ...staticProcess
+  },
   // populated below
   path: {
     default: {}
@@ -183,15 +196,22 @@ const TRIGGER = Symbol();
 pregyp.find[TRIGGER] = true;
 const staticPath = staticModules.path;
 Object.keys(path).forEach(name => {
-  const fn = function () {
-    return path[name].apply(this, arguments);
-  };
-  fn[TRIGGER] = true;
-  staticPath[name] = staticPath.default[name] = fn;
+  const pathFn = path[name];
+  if (typeof pathFn === 'function') {
+    const fn = function () {
+      return pathFn.apply(this, arguments);
+    };
+    fn[TRIGGER] = true;
+    staticPath[name] = staticPath.default[name] = fn;
+  }
+  else {
+    staticPath[name] = staticPath.default[name] = pathFn;
+  }
 });
 
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
+const cwd = process.cwd();
 
 module.exports = async function (content, map) {
   if (this.cacheable)
@@ -225,6 +245,9 @@ module.exports = async function (content, map) {
   const specialCase = handleSpecialCase(id, code);
 
   const options = getOptions(this);
+  if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN) {
+    staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
+  }
   const assetState = getAssetState(options, this._compilation);
   const entryId = assetState.entryId;
 
@@ -248,11 +271,13 @@ module.exports = async function (content, map) {
       });
     }
 
-    const name = assetState.assets[assetPath] ||
-        (assetState.assets[assetPath] = getUniqueAssetName(outName, assetPath, assetState.assetNames));
+    let name;
+    if (!(name = assetState.assets[assetPath])) {
+      name = assetState.assets[assetPath] = getUniqueAssetName(outName, assetPath, assetState.assetNames);
+      if (options.debugLog)
+        console.log('Emitting ' + assetPath + ' for static use in module ' + id);
+    }
 
-    if (options.debugLog)
-      console.log('Emitting ' + assetPath + ' for static use in module ' + id);
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       const [source, stats] = await Promise.all([
         new Promise((resolve, reject) =>
@@ -276,20 +301,24 @@ module.exports = async function (content, map) {
     });
     return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
   };
-  const emitAssetDirectory = (assetDirPath) => {
+  const emitAssetDirectory = (wildcardPath, wildcards) => {
+    const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardPath.substr(0, wildcardIndex));
+    const assetDirPath = wildcardPath.substr(0, dirIndex);
+    const wildcardPattern = wildcardPath.substr(dirIndex).replace(wildcardRegEx, '**/*') || '/**/*';
     if (options.debugLog)
-      console.log('Emitting directory ' + assetDirPath + ' for static use in module ' + id);
+      console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath);
     const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames));
     assetState.assets[assetDirPath] = name;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       const files = (await new Promise((resolve, reject) =>
-        glob(assetDirPath + '/**/*', { mark: true, ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
+        glob(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
       )).filter(name => !excludeAssetExtensions.has(path.extname(name)) && !excludeAssetFiles.has(path.basename(name)));
       await Promise.all(files.map(async file => {
         // dont emit empty directories or ".js" files
-        if (file.endsWith('/') || file.endsWith('.js'))
+        if (file.endsWith(path.sep) || file.endsWith('.js'))
           return;
         const [source, stats] = await Promise.all([
           new Promise((resolve, reject) =>
@@ -313,7 +342,29 @@ module.exports = async function (content, map) {
       }));
     });
 
-    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
+    let assetExpressions = '';
+    let firstPrefix = '';
+    if (wildcards) {
+      let curPattern = wildcardPattern;
+      let first = true;
+      for (const wildcard of wildcards) {
+        const nextWildcardIndex = curPattern.indexOf('**/*');
+        const wildcardPrefix = curPattern.substr(0, nextWildcardIndex);
+        curPattern = curPattern.substr(nextWildcardIndex + 4);
+        if (first) {
+          firstPrefix = wildcardPrefix;
+          first = false;
+        }
+        else {
+          assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).slice(1, -1) + "'";
+        }
+        assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
+      }
+      if (curPattern.length) {
+        assetExpressions += " + \'" + JSON.stringify(curPattern).slice(1, -1) + "'";
+      }
+    }
+    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name + firstPrefix).slice(1, -1) + "'" + assetExpressions;
   };
 
   let assetEmissionPromises = Promise.resolve();
@@ -356,13 +407,7 @@ module.exports = async function (content, map) {
     },
     process: {
       shadowDepth: 0,
-      value: {   
-        env: {
-          NODE_ENV: typeof options.production === 'boolean' ? (options.production ? 'production' : 'dev') : UNKNOWN,
-          [UNKNOWN]: true
-        },
-        [UNKNOWN]: true
-      }
+      value: staticProcess
     }
   });
 
@@ -427,9 +472,9 @@ module.exports = async function (content, map) {
     Object.keys(globalBindings).forEach(name => {
       vars[name] = globalBindings[name];
     });
-
     // evaluate returns undefined for non-statically-analyzable
-    return evaluate(expr, vars, computeBranches);
+    const result = evaluate(expr, vars, computeBranches);
+    return result;
   }
 
   // statically determinable leaves are tracked, and inlined when the
@@ -477,12 +522,9 @@ module.exports = async function (content, map) {
           // Could add import.meta.url, even path-like environment variables
           if (typeof (binding = getKnownBinding(node.name)) === 'string' && path.isAbsolute(binding) ||
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
-            staticChildValue = { value: binding };
-            // if it computes, then we start backtracking
-            if (staticChildValue) {
-              staticChildNode = node;
-              return this.skip();
-            }
+            staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
+            staticChildNode = node;
+            return this.skip();
           }
           // free require -> __non_webpack_require__
           else if (!isESM && node.name === 'require' && knownBindings.require.shadowDepth === 0 && parent.type !== 'UnaryExpression') {
@@ -859,21 +901,68 @@ module.exports = async function (content, map) {
   });
 
   function emitStaticChildAsset (wrapRequire = false) {
+    function validAssetEmission (assetPath) {
+      if (!assetPath)
+        return;
+      // do not emit own id
+      if (assetPath === id)
+        return;
+      let wildcardSuffix = '';
+      if (assetPath.endsWith(path.sep))
+        wildcardSuffix = path.sep;
+      else if (assetPath.endsWith(path.sep + WILDCARD))
+        wildcardSuffix = path.sep + WILDCARD;
+      else if (assetPath.endsWith(WILDCARD))
+        wildcardSuffix = WILDCARD;
+      // do not emit __dirname
+      if (assetPath === dir + wildcardSuffix)
+        return;
+      // do not emit directories above __dirname
+      if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
+        return;
+      // do not emit asset directories higher than the package base itself
+      if (pkgBase && !assetPath.startsWith(pkgBase)) {
+        if (options.debugLog)
+          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+        return;
+      }
+      // do not emit assets outside of the cwd
+      if (!pkgBase && !assetPath.startsWith(cwd)) {
+        if (options.debugLog)
+          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+        return;
+      }
+
+      // verify the asset file / directory exists
+      const wildcardIndex = assetPath.indexOf(WILDCARD);
+      const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
+      const basePath = assetPath.substr(0, dirIndex);
+      try {
+        const stats = statSync(basePath);
+        if (wildcardIndex !== -1 && stats.isFile())
+          return;
+        if (stats.isFile())
+          return emitAsset;
+        if (stats.isDirectory())
+          return emitAssetDirectory;
+      }
+      catch (e) {
+        return;
+      }
+    }
     if ('value' in staticChildValue) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
       catch (e) {}
-      // TODO: better work out this restriction model
-      if (resolved === '/') {
-        resolved = null;
-      }
-      // don't emit the filename of this module itself or a direct uncontextual __dirname
-      if (resolved && resolved !== id && !(staticChildNode.type === 'Identifier' && staticChildNode.name === '__dirname')) {
-        const inlineString = getInlined(inlineType(resolved), resolved);
-        if (inlineString) {
-          magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
-          transformed = true;
-        }
+      let emitAsset;
+      if (emitAsset = validAssetEmission(resolved)) {
+        let inlineString = emitAsset(resolved, staticChildValue.wildcards);
+        // require('bindings')(...)
+        // -> require(require('bindings')(...))
+        if (wrapRequire)
+          inlineString = '__non_webpack_require__(' + inlineString + ')';
+        magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+        transformed = true;
       }
     }
     else {
@@ -883,52 +972,16 @@ module.exports = async function (content, map) {
       let resolvedElse;
       try { resolvedElse = path.resolve(staticChildValue.else); }
       catch (e) {}
-      const thenInlineType = inlineType(resolvedThen);
-      const elseInlineType = inlineType(resolvedElse);
-      // only inline conditionals when both branches are known inlinings
-      if (thenInlineType && elseInlineType) {
-        const thenInlineString = getInlined(thenInlineType, resolvedThen);
-        const elseInlineString = getInlined(elseInlineType, resolvedElse);
+      let emitAsset;
+      // only inline conditionals when both branches are known same inlinings
+      if (!wrapRequire && (emitAsset = validAssetEmission(resolvedThen)) && emitAsset === validAssetEmission(resolvedElse)) {
+        const thenInlineString = emitAsset(resolvedThen);
+        const elseInlineString = emitAsset(resolvedElse);
         magicString.overwrite(
           staticChildNode.start, staticChildNode.end,
           `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
         );
         transformed = true;
-      }
-    }
-    function inlineType (value) {
-      let stats;
-      if (typeof value === 'string') {
-        try {
-          stats = statSync(value);
-        }
-        catch (e) {
-        }
-      }
-      else if (typeof value === 'boolean')
-        return 'value';
-      if (stats && stats.isFile())
-        return 'file';
-      else if (stats && stats.isDirectory())
-        return 'directory';
-    }
-    function getInlined (inlineType, value) {
-      switch (inlineType) {
-        case 'value': return value;
-        case 'file':
-          let replacement = emitAsset(value);
-          // require('bindings')(...)
-          // -> require(require('bindings')(...))
-          if (wrapRequire)
-            replacement = '__non_webpack_require__(' + replacement + ')';
-          return replacement;
-        case 'directory':
-          // do not emit asset directories higher than the package base itself
-          if (!pkgBase || value.startsWith(pkgBase))
-            return emitAssetDirectory(value);
-          else if (options.debugLog)
-            console.log('Skipping asset emission of ' + value + ' directory for ' + id + ' as it is outside the package base ' + pkgBase);
-
       }
     }
     staticChildNode = staticChildValue = undefined;
