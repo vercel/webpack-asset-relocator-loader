@@ -209,9 +209,15 @@ Object.keys(path).forEach(name => {
   }
 });
 
+// overload path.resolve to support custom cwd
+staticPath.resolve = staticPath.default.resolve = function (...args) {
+  return path.resolve.apply(this, [cwd, ...args]);
+};
+staticPath.resolve[TRIGGER] = true;
+
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
-const cwd = process.cwd();
+let cwd;
 
 module.exports = async function (content, map) {
   if (this.cacheable)
@@ -247,6 +253,12 @@ module.exports = async function (content, map) {
   const options = getOptions(this);
   if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN) {
     staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
+  }
+  if (!cwd) {
+    if (typeof options.cwd === 'string')
+      cwd = path.resolve(options.cwd);
+    else
+      cwd = process.cwd();
   }
   const assetState = getAssetState(options, this._compilation);
   const entryId = assetState.entryId;
