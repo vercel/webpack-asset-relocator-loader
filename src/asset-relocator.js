@@ -339,16 +339,14 @@ module.exports = async function (content, map) {
     assetState.assets[assetDirPath] = name;
 
     // this used to be async but had to switch to support no emission for no detection
-    let files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' });
-    if (!files.length)
-      return;
-
-    files = files.filter(name => 
+    const files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }).filter(name => 
       !excludeAssetExtensions.has(path.extname(name)) &&
       !excludeAssetFiles.has(path.basename(name)) &&
-      !name.endsWith('.js') &&
       !name.endsWith(path.sep)
     );
+
+    if (!files.length)
+      return;
 
     assetEmissionPromises = assetEmissionPromises.then(async () => {
       await Promise.all(files.map(async file => {
