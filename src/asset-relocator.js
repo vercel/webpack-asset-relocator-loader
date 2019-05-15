@@ -1032,16 +1032,19 @@ module.exports = async function (content, map) {
       // do not emit directories above __dirname
       if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
         return;
-      // do not emit asset directories higher than the package base itself
-      if (pkgBase && !assetPath.startsWith(pkgBase)) {
-        if (options.debugLog) {
-          if (assetEmission(assetPath))
-            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+      // do not emit asset directories higher than the node_modules base if a package
+      if (pkgBase) {
+        const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
+        if (!assetPath.startsWith(nodeModulesBase)) {
+          if (options.debugLog) {
+            if (assetEmission(assetPath))
+              console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+          }
+          return;
         }
-        return;
       }
-      // do not emit assets outside of the cwd
-      if (!pkgBase && !assetPath.startsWith(cwd)) {
+      // otherwise, do not emit assets outside of the cwd
+      else if (!assetPath.startsWith(cwd)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
             console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
