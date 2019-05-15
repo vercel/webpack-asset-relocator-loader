@@ -45,7 +45,6 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
             loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
             options: {
               existingAssetNames: ['existing.txt'],
-              escapeNonAnalyzableRequires: true,
               wrapperCompatibility: true,
               debugLog: true,
               production: true

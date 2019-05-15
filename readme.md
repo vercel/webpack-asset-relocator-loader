@@ -40,9 +40,9 @@ Any `.node` files included will also support binary relocation.
             // defined that should not be emitted
             existingAssetNames: []
             wrapperCompatibility: false, // optional, default
-            escapeNonAnalyzableRequires: false, // optional, default
             // build for process.env.NODE_ENV = 'production'
             production: true, // optional, default is undefined
+            cwd: process.cwd(), // optional, default
             debugLog: false, // optional, default
           }
         }
@@ -58,13 +58,14 @@ Assets will be emitted using `emitAsset`, with their references updated in the c
 
 ### Asset Relocation
 
-Assets are detected using static analysis of code, based on very specific triggers designed the the most common Node.js workflows to provide build support for a very high (but not perfect) level of compatibility with existing Node.js libraries.
+Assets are detected using static analysis of code, based on very specific triggers designed for common Node.js workflows to provide build support for a very high (but not perfect) level of compatibility with existing Node.js libraries.
 
-Currently only `__filename` and `__dirname` references provide an initial trigger to an asset load.
+* `process.cwd()`, `__filename`, `__dirname`, `path.*()`, `require.resolve` are all statically analyzed when possible.
+* File emissions for exact asset paths
+* Whole directory asset emissions for exact directory paths
+* Wildcard asset emissions for variable path expressions
 
-Static analysis determines these expressions, and if they can be evaluated to an exact asset location, the expression is replaced with a new expression to the relocated asset and the asset emitted. In addition. A fairly comprehensive variety of expression cases are supported here, which is improving over time, but there will still be edge cases the analysis cannot detect.
-
-Support for `require.resolve`, `import.meta.url` or even path-like environment variables could also be added as triggers in future.
+When an asset is emitted, the pure expression referencing the asset path is replaced with a new expression to the relocated asset and the asset emitted. In the case of wildcard emission, the dynamic parts of the expression are maintained.
 
 ### Binary Relocation
 
@@ -85,3 +86,5 @@ These include:
 * `require.main === module` checks are retained for the entry point being built.
 * `options.wrapperCompatibility`: Automatically handles common AMD / Browserify wrappers to ensure they are properly built by Webpack. See the `utils/wrappers.js` file for the exact transformations currently provided.
 * `options.escapeNonAnalyzableRequires`: Determines when a `require` statement is definitely not analyzable by Webpack, and replaces it with the outer `__non_webpack_require__`. This is useful for things like plugin systems that take a `pluginModule` string and then try to require it, but still won't correcly support contextual requires for local modules.
+* `require.resolve` support in the target environment, while also supporting emission in the build environment.
+* Dynamic `require` statements are analyzed to exact paths wherever possible, and when not possible to analyze, turned into dynamic requires in the target environment.

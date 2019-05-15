@@ -89,15 +89,18 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(1);
+/* WEBPACK VAR INJECTION */(function(__dirname) {const { sep } = __webpack_require__(1);
 
+const X = sep;
+
+fs.readFileSync(__dirname + '/asset.txt');
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
 /***/ (function(module, exports) {
 
-console.log('b');
-
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

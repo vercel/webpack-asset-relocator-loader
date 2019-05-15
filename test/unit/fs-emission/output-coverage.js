@@ -89,21 +89,23 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-(function (define) {
-  'use strict';
-  define(function () {
-    __webpack_require__(1);
-  });
-})
-(typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
+/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
 
+fs.readFile('./asset1.txt')
+
+fs.readFile(__dirname + '/asset2.txt')
+
+const _basePath = __dirname;
+const asset3 = 'asset3.txt';
+fs.readFileSync(__dirname + '/asset3.txt', 'utf8');
+
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
 /***/ (function(module, exports) {
 
-module.exports = 'dep';
-
+module.exports = require("fs");
 
 /***/ })
 /******/ ]);

@@ -89,21 +89,15 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-(function (define) {
-  'use strict';
-  define(function () {
-    __webpack_require__(1);
-  });
-})
-(typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
-
+/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+let moduleJsPath = isHarmony ? __dirname + '/asset1.txt' : __dirname + '/asset2.txt';
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
 /***/ (function(module, exports) {
 
-module.exports = 'dep';
-
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

@@ -99,12 +99,20 @@ module.exports = require("fs");
 __webpack_require__.r(__webpack_exports__);
 /* WEBPACK VAR INJECTION */(function(__dirname) {/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(fs__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_1__);
 
-const { readFileSync } = fs__WEBPACK_IMPORTED_MODULE_0___default.a;
 
-console.log(fs__WEBPACK_IMPORTED_MODULE_0___default.a.readFileSync(join(__dirname + '/asset-fs-inline-path-enc-es-5', 'asset.txt'), 'utf8'));
+
+console.log(fs__WEBPACK_IMPORTED_MODULE_0___default.a.readFileSync(__dirname + '/asset.txt', 'utf8'));
 
 /* WEBPACK VAR INJECTION */}.call(this, "/"))
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

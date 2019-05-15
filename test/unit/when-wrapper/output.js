@@ -95,7 +95,7 @@ module.exports =
     __webpack_require__(1);
   });
 })
-(typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(__webpack_require__(2)); })
+(typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(require); })
 
 
 /***/ }),
@@ -104,20 +104,6 @@ module.exports =
 
 module.exports = 'dep';
 
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports) {
-
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = function() { return []; };
-webpackEmptyContext.resolve = webpackEmptyContext;
-module.exports = webpackEmptyContext;
-webpackEmptyContext.id = 2;
 
 /***/ })
 /******/ ]);

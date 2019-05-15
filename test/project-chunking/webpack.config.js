@@ -18,8 +18,7 @@ module.exports = {
       use: {
         loader: __dirname + '/../../src/asset-relocator.js',
         options: {
-          wrapperCompatibility: true,
-          escapeNonAnalyzableRequires: true,
+          wrapperCompatibility: true
         }
       }
     }]

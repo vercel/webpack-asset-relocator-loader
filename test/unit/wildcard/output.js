@@ -89,11 +89,10 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
-if (false)
-  {}
-else if (fs.existsSync(__dirname + '/input.js'))
-  __webpack_require__(0);
+/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+
+fs.readFileSync(__dirname + '/assets/' + unknown + '.txt');
+fs.readFileSync(__dirname + '/assets/' + unknown.join('/') + '.txt');
 
 /* WEBPACK VAR INJECTION */}.call(this, "/"))
 
@@ -101,7 +100,7 @@ else if (fs.existsSync(__dirname + '/input.js'))
 /* 1 */
 /***/ (function(module, exports) {
 
-module.exports = require("fs");
+module.exports = require("path");
 
 /***/ })
 /******/ ]);

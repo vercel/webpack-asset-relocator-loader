@@ -89,7 +89,15 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(0);
+const driver = global.MONGOOSE_DRIVER_PATH || './dir';
+
+const Connection = __webpack_require__(1);
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports) {
+
+module.exports = 'connection';
 
 
 /***/ })

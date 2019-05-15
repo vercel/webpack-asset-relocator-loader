@@ -11,8 +11,8 @@ module.exports = function (id, _code) {
         if (statement.type === 'VariableDeclaration' &&
             statement.declarations[0].id.type === 'Identifier' &&
             statement.declarations[0].id.name === 'googleProtoFilesDir') {
-          magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end,
-              emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files')));
+          const emission = emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files'));
+          magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end, emission);
           statement.declarations[0].init = null;
           return true;
         }
@@ -115,9 +115,82 @@ module.exports = function (id, _code) {
             statement.body.body[0].block.body[0].expression.right.arguments[0].property.type === 'Identifier' &&
             statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
           const arg = statement.body.body[0].block.body[0].expression.right.arguments[0];
-          statement.body.body[0].block.body[0].expression.right.arguments = [];
+          statement.body.body[0].block.body[0].expression.right.arguments = [{ type: 'Literal', value: '_' }];
           const binaryName = 'oracledb-abi' + process.versions.modules + '-' + process.platform + '-' + process.arch + '.node';
           magicString.overwrite(arg.start, arg.end, global._unit ? "'./oracledb.js'" : "'../build/Release/" + binaryName + "'");
+          return true;
+        }
+      }
+    };
+  }
+  else if (false && (id.endsWith('@ffmpeg-installer/ffmpeg/index.js') || global._unit && id.includes('ffmpeg'))) {
+    return ({ ast, magicString }) => {
+      for (const statement of ast.body) {
+        if (statement.type === 'IfStatement' &&
+            statement.test.type === 'CallExpression' &&
+            statement.test.callee.type === 'Identifier' &&
+            statement.test.callee.name === 'verifyFile' &&
+            statement.test.arguments.length === 1 &&
+            statement.test.arguments[0].type === 'Identifier' &&
+            statement.test.arguments[0].name === 'npm3Binary') {
+          const os = require('os');
+          const binaryPath = path.resolve(id, '../../' + os.platform() + '-' + os.arch()) + (os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+          const pjson = require(path.resolve(id, '../package.json'));
+
+          const version = pjson.ffmpeg || pjson.version;
+          magicString.overwrite(ast.start, ast.end, `
+            var os = require('os');
+            var path = require('path');
+            var binaryPath = path.resolve(__dirname, os.platform() + '-' + os.arch()) + (os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+
+            const path 
+            module.exports = {
+              path: 
+              version: require()
+            };
+            var os = require('os');
+            var fs = require('fs');
+            var path = require('path');
+            
+            var verifyFile;
+            
+            var platform = os.platform() + '-' + os.arch();
+            
+            var packageName = '@ffmpeg-installer/' + platform;
+            
+            var binary = os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+            
+            var npm3Path = path.resolve(__dirname, '..', platform);
+            var npm2Path = path.resolve(__dirname, 'node_modules', '@ffmpeg-installer', platform);
+            
+            var npm3Binary = path.join(npm3Path, binary);
+            var npm2Binary = path.join(npm2Path, binary);
+            
+            var npm3Package = path.join(npm3Path, 'package.json');
+            var npm2Package = path.join(npm2Path, 'package.json');
+            
+            var ffmpegPath, packageJson;
+            
+            if (verifyFile(npm3Binary)) {
+                ffmpegPath = npm3Binary;
+                packageJson = require(npm3Package);
+            } else if (verifyFile(npm2Binary)) {
+                ffmpegPath = npm2Binary;
+                packageJson = require(npm2Package);
+            } else {
+                throw 'Could not find ffmpeg executable, tried "' + npm3Binary + '" and "' + npm2Binary + '"';
+            }
+            
+            var version = packageJson.ffmpeg || packageJson.version;
+            var url = packageJson.homepage;
+            
+            module.exports = {
+                path: ffmpegPath,
+                version: version,
+                url: url
+            };
+          `);
+          ast.body = [];
           return true;
         }
       }

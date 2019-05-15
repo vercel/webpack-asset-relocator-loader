@@ -74,10 +74,11 @@ function findCompiledModule(basePath, specList) {
   return null;
 }
 function find(basePath = process.cwd()) {
-  return findCompiledModule(basePath, [
+  const found = findCompiledModule(basePath, [
     { ext: ".node", name: "nbind.node", type: "node" },
     { ext: ".js", name: "nbind.js", type: "emcc" }
   ]);
+  return found;
 }
-exports.nbind = { default: { init: find, find }, init: find, find };
+exports.nbind = find;
 

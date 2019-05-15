@@ -137,6 +137,8 @@ function handleWrappers (ast, scope, magicString) {
       if (innerBody) {
         const requireVar = innerBody.body[0].body.body[0].consequent.body[0].consequent.body[0].declarations[0].init;
         const requireCheck = innerBody.body[1].init.declarations[0].init;
+        requireVar.right.name = '_';
+        requireCheck.right.name = '_';
         magicString.overwrite(requireVar.start, requireVar.end, '__non_webpack_require__');
         magicString.overwrite(requireCheck.start, requireCheck.end, '__non_webpack_require__');
         transformed = true;

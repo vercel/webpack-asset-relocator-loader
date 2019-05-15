@@ -87,12 +87,17 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-var isNodeSix = process.versions.node >= '6';
+/* WEBPACK VAR INJECTION */(function(__dirname) {const asset1 = __dirname + '/asset1.txt';
 
-module.exports = __webpack_require__(0);
+function loader () {}
+loader(__dirname + '/asset2.txt');
 
+unknown(__dirname + '/asset1.txt');
+
+const thing = asdf(__dirname + '/asset3.txt');
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })
 /******/ ]);
