@@ -12,8 +12,7 @@ const glob = require('glob');
 const getPackageBase = require('./utils/get-package-base');
 const getPackageScope = require('./utils/get-package-scope');
 const { pregyp, nbind } = require('./utils/binary-locators');
-const handleWrappers = require('./utils/wrappers');
-const handleSpecialCase = require('./utils/special-cases');
+const handleSpecialCases = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
 const stage3 = require('acorn-stage3');
@@ -269,8 +268,6 @@ module.exports = async function (content, map) {
 
   let code = content.toString();
 
-  const specialCase = handleSpecialCase(id, code);
-
   const options = getOptions(this);
   if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN) {
     staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
@@ -432,10 +429,6 @@ module.exports = async function (content, map) {
 
   let transformed = false;
 
-  if (specialCase) {
-    transformed = specialCase({ code, ast, scope, magicString, emitAsset, emitAssetDirectory });
-  }
-
   const knownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
@@ -535,11 +528,8 @@ module.exports = async function (content, map) {
         node.arguments[0].type === 'Literal';
   }
 
-  if (options.wrapperCompatibility) {
-    ({ ast, scope, transformed: wrapperTransformed } = handleWrappers(ast, scope, magicString, code.length));
-    if (wrapperTransformed)
-      transformed = true;
-  }
+  ({ ast = ast, scope = scope, transformed = transformed } =
+        handleSpecialCases({ id, ast, scope, pkgBase, magicString, options, emitAsset, emitAssetDirectory }) || {});
 
   walk(ast, {
     enter (node, parent) {
