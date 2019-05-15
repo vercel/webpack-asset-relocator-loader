@@ -236,7 +236,7 @@ const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'ch
 let cwd;
 
 function backtrack (self, parent) {
-  if (parent && parent.type !== 'ArrayExpression')
+  if (!parent || parent.type !== 'ArrayExpression')
     return self.skip();
 }
 
@@ -867,7 +867,7 @@ module.exports = async function (content, map) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
-            return backtrack(this.parent);
+            return backtrack(this, parent);
           }
         }
         // require = require('esm')(...)
