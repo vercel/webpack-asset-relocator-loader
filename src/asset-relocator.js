@@ -918,7 +918,7 @@ module.exports = async function (content, map) {
           fnName = node.id;
           args = node.arguments;
         }
-        if (fnName) {
+        if (fnName && node.body.body) {
           let requireDecl, requireDeclaration, returned = false;
           for (let i = 0; i < node.body.body.length; i++) {
             if (node.body.body[i].type === 'VariableDeclaration' && !requireDecl) {
