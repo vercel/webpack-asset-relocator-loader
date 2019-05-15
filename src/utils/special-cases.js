@@ -11,8 +11,8 @@ module.exports = function (id, _code) {
         if (statement.type === 'VariableDeclaration' &&
             statement.declarations[0].id.type === 'Identifier' &&
             statement.declarations[0].id.name === 'googleProtoFilesDir') {
-          magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end,
-              emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files')));
+          const emission = emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files'));
+          magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end, emission);
           statement.declarations[0].init = null;
           return true;
         }

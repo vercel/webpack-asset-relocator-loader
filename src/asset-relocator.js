@@ -338,14 +338,20 @@ module.exports = async function (content, map) {
     const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames));
     assetState.assets[assetDirPath] = name;
 
+    // this used to be async but had to switch to support no emission for no detection
+    let files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' });
+    if (!files.length)
+      return;
+
+    files = files.filter(name => 
+      !excludeAssetExtensions.has(path.extname(name)) &&
+      !excludeAssetFiles.has(path.basename(name)) &&
+      !name.endsWith('.js') &&
+      !name.endsWith(path.sep)
+    );
+
     assetEmissionPromises = assetEmissionPromises.then(async () => {
-      const files = (await new Promise((resolve, reject) =>
-        glob(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }, (err, files) => err ? reject(err) : resolve(files))
-      )).filter(name => !excludeAssetExtensions.has(path.extname(name)) && !excludeAssetFiles.has(path.basename(name)));
       await Promise.all(files.map(async file => {
-        // dont emit empty directories or ".js" files
-        if (file.endsWith(path.sep) || file.endsWith('.js'))
-          return;
         const [source, stats] = await Promise.all([
           new Promise((resolve, reject) =>
             readFile(file, (err, source) => err ? reject(err) : resolve(source))
@@ -998,12 +1004,14 @@ module.exports = async function (content, map) {
       let emitAsset;
       if (emitAsset = validAssetEmission(resolved)) {
         let inlineString = emitAsset(resolved, staticChildValue.wildcards);
-        // require('bindings')(...)
-        // -> require(require('bindings')(...))
-        if (wrapRequire)
-          inlineString = '__non_webpack_require__(' + inlineString + ')';
-        magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
-        transformed = true;
+        if (inlineString) {
+          // require('bindings')(...)
+          // -> require(require('bindings')(...))
+          if (wrapRequire)
+            inlineString = '__non_webpack_require__(' + inlineString + ')';
+          magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+          transformed = true;
+        }
       }
     }
     else {
@@ -1018,11 +1026,13 @@ module.exports = async function (content, map) {
       if (!wrapRequire && (emitAsset = validAssetEmission(resolvedThen)) && emitAsset === validAssetEmission(resolvedElse)) {
         const thenInlineString = emitAsset(resolvedThen);
         const elseInlineString = emitAsset(resolvedElse);
-        magicString.overwrite(
-          staticChildNode.start, staticChildNode.end,
-          `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
-        );
-        transformed = true;
+        if (thenInlineString && elseInlineString) {
+          magicString.overwrite(
+            staticChildNode.start, staticChildNode.end,
+            `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
+          );
+          transformed = true;
+        }
       }
     }
     staticChildNode = staticChildValue = undefined;
