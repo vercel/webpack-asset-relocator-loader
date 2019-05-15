@@ -233,6 +233,11 @@ const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 let cwd;
 
+function backtrack (self, parent) {
+  if (parent && parent.type !== 'ArrayExpression')
+    return self.skip();
+}
+
 module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
@@ -545,7 +550,7 @@ module.exports = async function (content, map) {
       }
 
       if (staticChildNode)
-        return this.skip();
+        return backtrack(this, parent);
 
       if (node.type === 'Identifier') {
         if (isIdentifierRead(node, parent)) {
@@ -713,7 +718,7 @@ module.exports = async function (content, map) {
           // if it computes, then we start backtrackingelse 
           if (staticChildValue) {
             staticChildNode = node;
-            return this.skip();
+            return backtrack(this, parent);
           }
         }
         // handle well-known function symbol cases
@@ -744,7 +749,7 @@ module.exports = async function (content, map) {
                     staticChildValue = { value: resolved };
                     staticChildNode = node;
                     emitStaticChildAsset(staticBindingsInstance);
-                    return this.skip();
+                    return backtrack(this, parent);
                   }
                 }
               }
@@ -798,7 +803,7 @@ module.exports = async function (content, map) {
                 // if it computes, then we start backtracking
                 if (staticChildValue) {
                   staticChildNode = node.arguments[0];
-                  return this.skip();
+                  return backtrack(this, parent);
                 }
               }
             break;
@@ -831,7 +836,7 @@ module.exports = async function (content, map) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
-              return this.skip();
+              return backtrack(this, parent);
             }
           }
         }
@@ -860,7 +865,7 @@ module.exports = async function (content, map) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
-            return this.skip();
+            return backtrack(this.parent);
           }
         }
         // require = require('esm')(...)
@@ -960,7 +965,7 @@ module.exports = async function (content, map) {
       if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
         return;
       // do not emit asset directories higher than the package base itself
-      if (pkgBase && !assetPath.startsWith(pkgBase)) {
+      if (wildcardSuffix && pkgBase && !assetPath.startsWith(pkgBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
             console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
