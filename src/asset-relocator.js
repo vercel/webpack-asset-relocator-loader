@@ -1041,7 +1041,7 @@ module.exports = async function (content, map) {
         return;
       }
       // do not emit assets outside of the cwd
-      if (!assetPath.startsWith(cwd)) {
+      if (!pkgBase && !assetPath.startsWith(cwd)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
             console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
