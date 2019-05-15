@@ -239,6 +239,8 @@ function backtrack (self, parent) {
     return self.skip();
 }
 
+const BOUND_REQUIRE = Symbol();
+
 module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
@@ -517,6 +519,9 @@ module.exports = async function (content, map) {
   // Express engine opt-out
   let definedExpressEngines = false;
 
+  // track the name of any function that wraps "require"
+  let boundRequireName;
+
   // detect require('asdf');
   function isStaticRequire (node) {
     return node &&
@@ -716,6 +721,19 @@ module.exports = async function (content, map) {
         // handle well-known function symbol cases
         else if (calleeValue && typeof calleeValue.value === 'symbol') {
           switch (calleeValue.value) {
+            // customRequireWrapper('...') -> wrapperMod(require('...'), '...')
+            case BOUND_REQUIRE:
+              if (node.arguments.length === 1 &&
+                  node.arguments[0].type === 'Literal' &&
+                  node.callee.type === 'Identifier' &&
+                  knownBindings.require.shadowDepth === 0) {
+                transformed = true;
+                magicString.overwrite(node.callee.start, node.callee.end, 'require');
+                magicString.appendRight(node.start, boundRequireName + '(');
+                magicString.appendLeft(node.end, ', ' + code.substring(node.arguments[0].start, node.arguments[0].end) + ')');
+                return this.skip();
+              }
+            break;
             // require('bindings')(...)
             case BINDINGS:
               if (node.arguments.length) {
@@ -883,6 +901,64 @@ module.exports = async function (content, map) {
             magicString.overwrite(node.start, node.end, code.substring(node.alternate.start, node.alternate.end));
           }
           return this.skip();
+        }
+      }
+      // function p (x) { ...; var y = require(x); ...; return y;  } -> additional function p_mod (y) { ...; ...; return y; }
+      else if (!isESM &&
+               (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') &&
+               (node.arguments || node.params)[0] && (node.arguments || node.params)[0].type === 'Identifier') {
+        let fnName, args;
+        if ((node.type === 'ArrowFunctionExpression' ||  node.type === 'FunctionExpression') &&
+            parent.type === 'VariableDeclarator' &&
+            parent.id.type === 'Identifier') {
+          fnName = parent.id;
+          args = (node.arguments || node.params);
+        }
+        else if (node.id) {
+          fnName = node.id;
+          args = node.arguments;
+        }
+        if (fnName) {
+          let requireDecl, requireDeclaration, returned = false;
+          for (let i = 0; i < node.body.body.length; i++) {
+            if (node.body.body[i].type === 'VariableDeclaration' && !requireDecl) {
+              requireDecl = node.body.body[i].declarations.find(decl =>
+                decl.id.type === 'Identifier' &&
+                decl.init &&
+                decl.init.type === 'CallExpression' &&
+                decl.init.callee.type === 'Identifier' &&
+                decl.init.callee.name === 'require' &&
+                knownBindings.require.shadowDepth === 0 &&
+                decl.init.arguments[0] &&
+                decl.init.arguments[0].type === 'Identifier' &&
+                decl.init.arguments[0].name === args[0].name
+              );
+              if (requireDecl)
+                requireDeclaration = node.body.body[i];
+            }
+            if (requireDecl &&
+                node.body.body[i].type === 'ReturnStatement' &&
+                node.body.body[i].argument &&
+                node.body.body[i].argument.type === 'Identifier' &&
+                node.body.body[i].argument.name === requireDecl.id.name) {
+              returned = true;
+              break;
+            }
+          }
+          if (returned) {
+            let prefix = ';';
+            const wrapArgs = node.type === 'ArrowFunctionExpression' && node.params[0].start === node.start;
+            if (node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') {
+              node = parent;
+              prefix = ',';
+            }
+            boundRequireName = fnName.name + '$$mod';
+            setKnownBinding(fnName.name, BOUND_REQUIRE);
+            const newFn = prefix + code.substring(node.start, fnName.start) + boundRequireName + code.substring(fnName.end, args[0].start + !wrapArgs) +
+                (wrapArgs ? '(' : '') + requireDecl.id.name + ', ' + code.substring(args[0].start, args[args.length - 1].end) + (wrapArgs ? ')' : '') + 
+                code.substring(args[0].end + !wrapArgs, requireDeclaration.start) + code.substring(requireDeclaration.end, node.end);
+            magicString.appendRight(node.end, newFn);
+          }
         }
       }
     },
