@@ -102,7 +102,7 @@ __webpack_require__(2)('not-found');
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__filename) {/**
+/* WEBPACK VAR INJECTION */(function(__filename, __dirname) {/**
  * Module dependencies.
  */
 
@@ -304,7 +304,7 @@ exports.getRoot = function getRoot(file) {
       dir = process.cwd();
     }
     if (
-      exists(join(dir, 'package.json')) ||
+      exists(__dirname + '/package.json') ||
       exists(join(dir, 'node_modules'))
     ) {
       // Found the 'package.json' file or 'node_modules' dir; we're done
@@ -324,7 +324,7 @@ exports.getRoot = function getRoot(file) {
   }
 };
 
-/* WEBPACK VAR INJECTION */}.call(this, "/index.js"))
+/* WEBPACK VAR INJECTION */}.call(this, "/index.js", "/"))
 
 /***/ }),
 /* 3 */
