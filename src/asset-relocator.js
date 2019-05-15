@@ -1033,7 +1033,7 @@ module.exports = async function (content, map) {
       if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
         return;
       // do not emit asset directories higher than the package base itself
-      if ((wildcardSuffix || assetPath.indexOf(WILDCARD) !== -1) && pkgBase && !assetPath.startsWith(pkgBase)) {
+      if (pkgBase && !assetPath.startsWith(pkgBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
             console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
