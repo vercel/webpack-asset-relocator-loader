@@ -227,6 +227,8 @@ staticPath.resolve = staticPath.default.resolve = function (...args) {
 };
 staticPath.resolve[TRIGGER] = true;
 
+const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
+
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 let cwd;
@@ -547,7 +549,7 @@ module.exports = async function (content, map) {
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
           // Could add import.meta.url, even path-like environment variables
-          if (typeof (binding = getKnownBinding(node.name)) === 'string' && path.isAbsolute(binding) ||
+          if (typeof (binding = getKnownBinding(node.name)) === 'string' && binding.match(absoluteRegEx) ||
               binding && (typeof binding === 'function' || typeof binding === 'object') && binding[TRIGGER]) {
             staticChildValue = { value: typeof binding === 'string' ? binding : undefined };
             staticChildNode = node;
@@ -821,7 +823,7 @@ module.exports = async function (content, map) {
                 setKnownBinding(prop.value.name, computed.value[prop.key.name]);
               }
             }
-            if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
+            if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -850,7 +852,7 @@ module.exports = async function (content, map) {
               setKnownBinding(prop.value.name, computed.value[prop.key.name]);
             }
           }
-          if (typeof computed.value === 'string' && path.isAbsolute(computed.value)) {
+          if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
@@ -944,22 +946,34 @@ module.exports = async function (content, map) {
       // do not emit __dirname
       if (assetPath === dir + wildcardSuffix)
         return;
+      // do not emit cwd
+      if (assetPath === cwd + wildcardSuffix)
+        return;
+      // do not emit node_modules
+      if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
+        return;
       // do not emit directories above __dirname
       if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
         return;
       // do not emit asset directories higher than the package base itself
       if (pkgBase && !assetPath.startsWith(pkgBase)) {
-        if (options.debugLog)
-          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+        if (options.debugLog) {
+          if (assetEmission(assetPath))
+            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
+        }
         return;
       }
       // do not emit assets outside of the cwd
       if (!pkgBase && !assetPath.startsWith(cwd)) {
-        if (options.debugLog)
-          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+        if (options.debugLog) {
+          if (assetEmission(assetPath))
+            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+        }
         return;
       }
-
+      return assetEmission(assetPath);
+    }
+    function assetEmission (assetPath) {
       // verify the asset file / directory exists
       const wildcardIndex = assetPath.indexOf(WILDCARD);
       const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
