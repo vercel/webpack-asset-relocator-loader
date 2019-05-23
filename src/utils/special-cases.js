@@ -17,9 +17,11 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
           statement.declarations[0].id.type === 'Identifier' &&
           statement.declarations[0].id.name === 'googleProtoFilesDir') {
         const emission = emitAssetDirectory(path.resolve(path.dirname(id), global._unit ? './' : '../../../google-proto-files'));
-        magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end, emission);
-        statement.declarations[0].init = null;
-        return { transformed: true };
+        if (emission) {
+          magicString.overwrite(statement.declarations[0].init.start, statement.declarations[0].init.end, emission);
+          statement.declarations[0].init = null;
+          return { transformed: true };
+        }
       }
     }
   }

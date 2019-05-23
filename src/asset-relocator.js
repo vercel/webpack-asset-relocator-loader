@@ -1090,7 +1090,7 @@ module.exports = async function (content, map) {
       return;
     // do not emit asset directories higher than the node_modules base if a package
     if (pkgBase) {
-      const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
+      const nodeModulesBase = id.substr(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
