@@ -241,6 +241,46 @@ function backtrack (self, parent) {
 
 const BOUND_REQUIRE = Symbol();
 
+function generateWildcardRequire(dir, request, wildcardParam, wildcardBlocks) {
+  const wildcardPath = path.resolve(dir, request);
+  const wildcardBlockIndex = wildcardBlocks.length;
+  const trailingWildcard = request.endsWith(WILDCARD);
+
+  const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+  const wildcardPrefix = wildcardPath.substr(0, wildcardIndex);
+  const wildcardSuffix = wildcardPath.substr(wildcardIndex + 1);
+  const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardPath.substr(0, wildcardIndex));
+  const assetDirPath = wildcardPath.substr(0, dirIndex);
+
+  // sync to support no emission case
+  let options = glob.sync(assetDirPath + '**/*.@(js|json|node)', { mark: true, ignore: 'node_modules/**/*' })
+  .filter(file => file.startsWith(wildcardPrefix) && file.endsWith(wildcardSuffix));
+
+  if (!options.length)
+    return;
+
+  const optionConditions = options.map((file, index) => {
+    const arg = JSON.stringify(file.substr(wildcardPrefix.length, file.length - wildcardSuffix.length));
+    let relPath = path.relative(dir, file).replace(/\\/g, '/');
+    if (!relPath.startsWith('../'))
+      relPath = './' + relPath;
+    let condition = index === 0 ? '  ' : '  else ';
+    if (trailingWildcard && arg.endsWith('.js'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 3)})`;
+    else if (trailingWildcard && arg.endsWith('.json'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
+    else if (trailingWildcard && arg.endsWith('.node'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
+    else
+      condition += `if (arg === ${arg})`;
+    condition += ` return require(${JSON.stringify(relPath)});`;
+    return condition;
+  }).join('\n');
+
+  wildcardBlocks.push(`function __ncc_wildcard$${wildcardBlockIndex} (arg) {\n${optionConditions}\n}`);
+  return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam});`;
+}
+
 module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
@@ -462,6 +502,8 @@ module.exports = async function (content, map) {
     knownBindings.require.value.resolve[TRIGGER] = true;
   }
 
+  let wildcardBlocks = [];
+
   function setKnownBinding (name, value) {
     // require is somewhat special in that we shadow it but don't
     // statically analyze it ("known unknown" of sorts)
@@ -601,9 +643,19 @@ module.exports = async function (content, map) {
         // we found the exact value for the require, and it used a binding from our analysis
         // -> inline the computed value for Webpack to use
         else if (typeof computed.value === 'string' && sawIdentifier) {
-          transformed = true;
-          magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
-          return this.skip();
+          if (computed.wildcards && computed.wildcards.length === 1) {
+            const emission = generateWildcardRequire(dir, computed.value, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks);
+            if (emission) {
+              magicString.overwrite(node.start, node.end, emission);
+              transformed = true;
+              return this.skip();
+            }
+          }
+          else {
+            magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
+            transformed = true;
+            return this.skip();
+          }
         }
         // branched require, and it used a binding from our analysis
         // -> inline the computed values for Webpack
@@ -997,6 +1049,8 @@ module.exports = async function (content, map) {
     return this.callback(null, code, map);
 
   assetEmissionPromises.then(() => {
+    if (wildcardBlocks.length)
+      magicString.appendLeft(ast.body[0].start, wildcardBlocks.join('\n') + '\n');
     code = magicString.toString();
     map = map || magicString.generateMap();
     if (map) {
