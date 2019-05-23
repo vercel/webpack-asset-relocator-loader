@@ -643,9 +643,9 @@ module.exports = async function (content, map) {
         // we found the exact value for the require, and it used a binding from our analysis
         // -> inline the computed value for Webpack to use
         else if (typeof computed.value === 'string' && sawIdentifier) {
-          if (computed.wildcards && computed.wildcards.length === 1) {
+          if (computed.wildcards) {
             const wildcardPath = path.resolve(dir, computed.value);
-            if (validAssetEmission(wildcardPath)) {
+            if (computed.wildcards.length === 1 && validAssetEmission(wildcardPath)) {
               const emission = generateWildcardRequire(dir, wildcardPath, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks, options.debugLog);
               if (emission) {
                 magicString.overwrite(node.start, node.end, emission);
