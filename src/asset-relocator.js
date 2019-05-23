@@ -247,20 +247,19 @@ function generateWildcardRequire(dir, request, wildcardParam, wildcardBlocks) {
   const trailingWildcard = request.endsWith(WILDCARD);
 
   const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+
   const wildcardPrefix = wildcardPath.substr(0, wildcardIndex);
   const wildcardSuffix = wildcardPath.substr(wildcardIndex + 1);
-  const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardPath.substr(0, wildcardIndex));
-  const assetDirPath = wildcardPath.substr(0, dirIndex);
+  const endPattern = wildcardSuffix ? '?(.@(js|json|node))' : '.@(js|json|node)';
 
   // sync to support no emission case
-  let options = glob.sync(assetDirPath + '**/*.@(js|json|node)', { mark: true, ignore: 'node_modules/**/*' })
-  .filter(file => file.startsWith(wildcardPrefix) && file.endsWith(wildcardSuffix));
+  let options = glob.sync(wildcardPrefix + '**' + wildcardSuffix + endPattern, { mark: true, ignore: 'node_modules/**/*' });
 
   if (!options.length)
     return;
 
   const optionConditions = options.map((file, index) => {
-    const arg = JSON.stringify(file.substr(wildcardPrefix.length, file.length - wildcardSuffix.length));
+    const arg = JSON.stringify(file.substring(wildcardPrefix.length, file.lastIndexOf(wildcardSuffix)));
     let relPath = path.relative(dir, file).replace(/\\/g, '/');
     if (!relPath.startsWith('../'))
       relPath = './' + relPath;
