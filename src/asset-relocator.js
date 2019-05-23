@@ -241,7 +241,7 @@ function backtrack (self, parent) {
 
 const BOUND_REQUIRE = Symbol();
 
-function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks) {
+function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks, log) {
   const wildcardBlockIndex = wildcardBlocks.length;
   const trailingWildcard = wildcardPath.endsWith(WILDCARD);
 
@@ -252,6 +252,8 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
   const endPattern = wildcardSuffix ? '?(.@(js|json|node))' : '.@(js|json|node)';
 
   // sync to support no emission case
+  if (log)
+    console.log('Generating wildcard requires for ' + wildcardPath.replace(WILDCARD, '*'));
   let options = glob.sync(wildcardPrefix + '**' + wildcardSuffix + endPattern, { mark: true, ignore: 'node_modules/**/*' });
 
   if (!options.length)
@@ -373,7 +375,7 @@ module.exports = async function (content, map) {
   };
   const emitAssetDirectory = (wildcardPath, wildcards) => {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardPath.substr(0, wildcardIndex));
+    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substr(0, dirIndex);
     const wildcardPattern = wildcardPath.substr(dirIndex).replace(wildcardRegEx, '**/*') || '/**/*';
     if (options.debugLog)
@@ -644,7 +646,7 @@ module.exports = async function (content, map) {
           if (computed.wildcards && computed.wildcards.length === 1) {
             const wildcardPath = path.resolve(dir, computed.value);
             if (validAssetEmission(wildcardPath)) {
-              const emission = generateWildcardRequire(dir, wildcardPath, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks);
+              const emission = generateWildcardRequire(dir, wildcardPath, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks, options.debugLog);
               if (emission) {
                 magicString.overwrite(node.start, node.end, emission);
                 transformed = true;
@@ -1110,7 +1112,7 @@ module.exports = async function (content, map) {
   function assetEmission (assetPath) {
     // verify the asset file / directory exists
     const wildcardIndex = assetPath.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
+    const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, wildcardIndex);
     const basePath = assetPath.substr(0, dirIndex);
     try {
       const stats = statSync(basePath);
