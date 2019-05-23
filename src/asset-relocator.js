@@ -277,7 +277,7 @@ function generateWildcardRequire(dir, request, wildcardParam, wildcardBlocks) {
   }).join('\n');
 
   wildcardBlocks.push(`function __ncc_wildcard$${wildcardBlockIndex} (arg) {\n${optionConditions}\n}`);
-  return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam});`;
+  return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam})`;
 }
 
 module.exports = async function (content, map) {

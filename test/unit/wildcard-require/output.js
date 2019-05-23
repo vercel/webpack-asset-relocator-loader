@@ -96,7 +96,7 @@ function __ncc_wildcard$0 (arg) {
 }
 const num = Math.ceil(Math.random() * 3, 0);
 
-const m = __ncc_wildcard$0(num);;
+const m = __ncc_wildcard$0(num);
 console.log(m);
 
 
