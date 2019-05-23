@@ -241,10 +241,9 @@ function backtrack (self, parent) {
 
 const BOUND_REQUIRE = Symbol();
 
-function generateWildcardRequire(dir, request, wildcardParam, wildcardBlocks) {
-  const wildcardPath = path.resolve(dir, request);
+function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks) {
   const wildcardBlockIndex = wildcardBlocks.length;
-  const trailingWildcard = request.endsWith(WILDCARD);
+  const trailingWildcard = wildcardPath.endsWith(WILDCARD);
 
   const wildcardIndex = wildcardPath.indexOf(WILDCARD);
 
@@ -643,11 +642,14 @@ module.exports = async function (content, map) {
         // -> inline the computed value for Webpack to use
         else if (typeof computed.value === 'string' && sawIdentifier) {
           if (computed.wildcards && computed.wildcards.length === 1) {
-            const emission = generateWildcardRequire(dir, computed.value, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks);
-            if (emission) {
-              magicString.overwrite(node.start, node.end, emission);
-              transformed = true;
-              return this.skip();
+            const wildcardPath = path.resolve(dir, computed.value);
+            if (validAssetEmission(wildcardPath)) {
+              const emission = generateWildcardRequire(dir, wildcardPath, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks);
+              if (emission) {
+                magicString.overwrite(node.start, node.end, emission);
+                transformed = true;
+                return this.skip();
+              }
             }
           }
           else {
@@ -1059,71 +1061,72 @@ module.exports = async function (content, map) {
     this.callback(null, code, map);
   });
 
-  function emitStaticChildAsset (wrapRequire = false) {
-    function validAssetEmission (assetPath) {
-      if (!assetPath)
-        return;
-      // do not emit own id
-      if (assetPath === id)
-        return;
-      let wildcardSuffix = '';
-      if (assetPath.endsWith(path.sep))
-        wildcardSuffix = path.sep;
-      else if (assetPath.endsWith(path.sep + WILDCARD))
-        wildcardSuffix = path.sep + WILDCARD;
-      else if (assetPath.endsWith(WILDCARD))
-        wildcardSuffix = WILDCARD;
-      // do not emit __dirname
-      if (assetPath === dir + wildcardSuffix)
-        return;
-      // do not emit cwd
-      if (assetPath === cwd + wildcardSuffix)
-        return;
-      // do not emit node_modules
-      if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
-        return;
-      // do not emit directories above __dirname
-      if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
-        return;
-      // do not emit asset directories higher than the node_modules base if a package
-      if (pkgBase) {
-        const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
-        if (!assetPath.startsWith(nodeModulesBase)) {
-          if (options.debugLog) {
-            if (assetEmission(assetPath))
-              console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
-          }
-          return;
-        }
-      }
-      // otherwise, do not emit assets outside of the cwd
-      else if (!assetPath.startsWith(cwd)) {
+  function validAssetEmission (assetPath) {
+    if (!assetPath)
+      return;
+    // do not emit own id
+    if (assetPath === id)
+      return;
+    let wildcardSuffix = '';
+    if (assetPath.endsWith(path.sep))
+      wildcardSuffix = path.sep;
+    else if (assetPath.endsWith(path.sep + WILDCARD))
+      wildcardSuffix = path.sep + WILDCARD;
+    else if (assetPath.endsWith(WILDCARD))
+      wildcardSuffix = WILDCARD;
+    // do not emit __dirname
+    if (assetPath === dir + wildcardSuffix)
+      return;
+    // do not emit cwd
+    if (assetPath === cwd + wildcardSuffix)
+      return;
+    // do not emit node_modules
+    if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
+      return;
+    // do not emit directories above __dirname
+    if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
+      return;
+    // do not emit asset directories higher than the node_modules base if a package
+    if (pkgBase) {
+      const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
+      if (!assetPath.startsWith(nodeModulesBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
-            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
         }
         return;
       }
-      return assetEmission(assetPath);
     }
-    function assetEmission (assetPath) {
-      // verify the asset file / directory exists
-      const wildcardIndex = assetPath.indexOf(WILDCARD);
-      const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
-      const basePath = assetPath.substr(0, dirIndex);
-      try {
-        const stats = statSync(basePath);
-        if (wildcardIndex !== -1 && stats.isFile())
-          return;
-        if (stats.isFile())
-          return emitAsset;
-        if (stats.isDirectory())
-          return emitAssetDirectory;
+    // otherwise, do not emit assets outside of the cwd
+    else if (!assetPath.startsWith(cwd)) {
+      if (options.debugLog) {
+        if (assetEmission(assetPath))
+          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
       }
-      catch (e) {
+      return;
+    }
+    return assetEmission(assetPath);
+  }
+  function assetEmission (assetPath) {
+    // verify the asset file / directory exists
+    const wildcardIndex = assetPath.indexOf(WILDCARD);
+    const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
+    const basePath = assetPath.substr(0, dirIndex);
+    try {
+      const stats = statSync(basePath);
+      if (wildcardIndex !== -1 && stats.isFile())
         return;
-      }
+      if (stats.isFile())
+        return emitAsset;
+      if (stats.isDirectory())
+        return emitAssetDirectory;
     }
+    catch (e) {
+      return;
+    }
+  }
+
+  function emitStaticChildAsset (wrapRequire = false) {
     if ('value' in staticChildValue) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
