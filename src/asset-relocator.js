@@ -377,7 +377,10 @@ module.exports = async function (content, map) {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substr(0, dirIndex);
-    const wildcardPattern = wildcardPath.substr(dirIndex).replace(wildcardRegEx, '**/*') || '/**/*';
+    const patternPath = wildcardPath.substr(dirIndex);
+    const wildcardPattern = patternPath.replace(wildcardRegEx, (match, index) => {
+      return patternPath[index - 1] === path.sep ? '**/*' : '*/**/*';
+    }) || '/**/*';
     if (options.debugLog)
       console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath);
@@ -421,12 +424,12 @@ module.exports = async function (content, map) {
     let assetExpressions = '';
     let firstPrefix = '';
     if (wildcards) {
-      let curPattern = wildcardPattern;
+      let curPattern = patternPath;
       let first = true;
       for (const wildcard of wildcards) {
-        const nextWildcardIndex = curPattern.indexOf('**/*');
+        const nextWildcardIndex = curPattern.indexOf(WILDCARD);
         const wildcardPrefix = curPattern.substr(0, nextWildcardIndex);
-        curPattern = curPattern.substr(nextWildcardIndex + 4);
+        curPattern = curPattern.substr(nextWildcardIndex + 1);
         if (first) {
           firstPrefix = wildcardPrefix;
           first = false;
