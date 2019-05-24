@@ -228,8 +228,6 @@ staticPath.resolve = staticPath.default.resolve = function (...args) {
 };
 staticPath.resolve[TRIGGER] = true;
 
-const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
-
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 let cwd;
@@ -237,6 +235,11 @@ let cwd;
 function backtrack (self, parent) {
   if (!parent || parent.type !== 'ArrayExpression')
     return self.skip();
+}
+
+const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
+function isAbsolutePathStr (str) {
+  return typeof str === 'string' && str.match(absoluteRegEx);
 }
 
 const BOUND_REQUIRE = Symbol();
@@ -377,7 +380,10 @@ module.exports = async function (content, map) {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
     const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substr(0, dirIndex);
-    const wildcardPattern = wildcardPath.substr(dirIndex).replace(wildcardRegEx, '**/*') || '/**/*';
+    const patternPath = wildcardPath.substr(dirIndex);
+    const wildcardPattern = patternPath.replace(wildcardRegEx, (match, index) => {
+      return patternPath[index - 1] === path.sep ? '**/*' : '*/**/*';
+    }) || '/**/*';
     if (options.debugLog)
       console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath);
@@ -421,12 +427,12 @@ module.exports = async function (content, map) {
     let assetExpressions = '';
     let firstPrefix = '';
     if (wildcards) {
-      let curPattern = wildcardPattern;
+      let curPattern = patternPath;
       let first = true;
       for (const wildcard of wildcards) {
-        const nextWildcardIndex = curPattern.indexOf('**/*');
+        const nextWildcardIndex = curPattern.indexOf(WILDCARD);
         const wildcardPrefix = curPattern.substr(0, nextWildcardIndex);
-        curPattern = curPattern.substr(nextWildcardIndex + 4);
+        curPattern = curPattern.substr(nextWildcardIndex + 1);
         if (first) {
           firstPrefix = wildcardPrefix;
           first = false;
@@ -793,7 +799,7 @@ module.exports = async function (content, map) {
             case BINDINGS:
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
-                if (arg.value) {
+                if (arg && arg.value) {
                   let staticBindingsInstance = false;
                   let opts;
                   if (typeof arg.value === 'object')
@@ -832,7 +838,7 @@ module.exports = async function (content, map) {
             case NBIND_INIT:
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
-                if (arg.value) {
+                if (arg && arg.value) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo) {
                     bindingInfo.path = path.relative(dir, bindingInfo.path);
@@ -897,7 +903,7 @@ module.exports = async function (content, map) {
                 setKnownBinding(prop.value.name, computed.value[prop.key.name]);
               }
             }
-            if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
+            if (isAbsolutePathStr(computed.value)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -926,7 +932,7 @@ module.exports = async function (content, map) {
               setKnownBinding(prop.value.name, computed.value[prop.key.name]);
             }
           }
-          if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
+          if (isAbsolutePathStr(computed.value)) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
@@ -1090,7 +1096,7 @@ module.exports = async function (content, map) {
       return;
     // do not emit asset directories higher than the node_modules base if a package
     if (pkgBase) {
-      const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
+      const nodeModulesBase = id.substr(0, id.indexOf(path.sep + 'node_modules')) + path.sep + 'node_modules' + path.sep;
       if (!assetPath.startsWith(nodeModulesBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
@@ -1129,7 +1135,7 @@ module.exports = async function (content, map) {
   }
 
   function emitStaticChildAsset (wrapRequire = false) {
-    if ('value' in staticChildValue) {
+    if (isAbsolutePathStr(staticChildValue.value)) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
       catch (e) {}
@@ -1146,7 +1152,7 @@ module.exports = async function (content, map) {
         }
       }
     }
-    else {
+    else if (isAbsolutePathStr(staticChildValue.then) && isAbsolutePathStr(staticChildValue.else)) {
       let resolvedThen;
       try { resolvedThen = path.resolve(staticChildValue.then); }
       catch (e) {}
