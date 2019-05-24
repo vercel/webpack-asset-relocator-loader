@@ -228,8 +228,6 @@ staticPath.resolve = staticPath.default.resolve = function (...args) {
 };
 staticPath.resolve[TRIGGER] = true;
 
-const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
-
 const excludeAssetExtensions = new Set(['.h', '.cmake', '.c', '.cpp']);
 const excludeAssetFiles = new Set(['CHANGELOG.md', 'README.md', 'readme.md', 'changelog.md']);
 let cwd;
@@ -237,6 +235,11 @@ let cwd;
 function backtrack (self, parent) {
   if (!parent || parent.type !== 'ArrayExpression')
     return self.skip();
+}
+
+const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
+function isAbsolutePathStr (str) {
+  return typeof str === 'string' && str.match(absoluteRegEx);
 }
 
 const BOUND_REQUIRE = Symbol();
@@ -796,7 +799,7 @@ module.exports = async function (content, map) {
             case BINDINGS:
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
-                if (arg.value) {
+                if (arg && arg.value) {
                   let staticBindingsInstance = false;
                   let opts;
                   if (typeof arg.value === 'object')
@@ -835,7 +838,7 @@ module.exports = async function (content, map) {
             case NBIND_INIT:
               if (node.arguments.length) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
-                if (arg.value) {
+                if (arg && arg.value) {
                   const bindingInfo = nbind(arg.value);
                   if (bindingInfo) {
                     bindingInfo.path = path.relative(dir, bindingInfo.path);
@@ -900,7 +903,7 @@ module.exports = async function (content, map) {
                 setKnownBinding(prop.value.name, computed.value[prop.key.name]);
               }
             }
-            if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
+            if (isAbsolutePathStr(computed.value)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -929,7 +932,7 @@ module.exports = async function (content, map) {
               setKnownBinding(prop.value.name, computed.value[prop.key.name]);
             }
           }
-          if (typeof computed.value === 'string' && computed.value.match(absoluteRegEx)) {
+          if (isAbsolutePathStr(computed.value)) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
@@ -1132,7 +1135,7 @@ module.exports = async function (content, map) {
   }
 
   function emitStaticChildAsset (wrapRequire = false) {
-    if ('value' in staticChildValue) {
+    if (isAbsolutePathStr(staticChildValue.value)) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
       catch (e) {}
@@ -1149,7 +1152,7 @@ module.exports = async function (content, map) {
         }
       }
     }
-    else {
+    else if (isAbsolutePathStr(staticChildValue.then) && isAbsolutePathStr(staticChildValue.else)) {
       let resolvedThen;
       try { resolvedThen = path.resolve(staticChildValue.then); }
       catch (e) {}
