@@ -241,6 +241,46 @@ function backtrack (self, parent) {
 
 const BOUND_REQUIRE = Symbol();
 
+function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks, log) {
+  const wildcardBlockIndex = wildcardBlocks.length;
+  const trailingWildcard = wildcardPath.endsWith(WILDCARD);
+
+  const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+
+  const wildcardPrefix = wildcardPath.substr(0, wildcardIndex);
+  const wildcardSuffix = wildcardPath.substr(wildcardIndex + 1);
+  const endPattern = wildcardSuffix ? '?(.@(js|json|node))' : '.@(js|json|node)';
+
+  // sync to support no emission case
+  if (log)
+    console.log('Generating wildcard requires for ' + wildcardPath.replace(WILDCARD, '*'));
+  let options = glob.sync(wildcardPrefix + '**' + wildcardSuffix + endPattern, { mark: true, ignore: 'node_modules/**/*' });
+
+  if (!options.length)
+    return;
+
+  const optionConditions = options.map((file, index) => {
+    const arg = JSON.stringify(file.substring(wildcardPrefix.length, file.lastIndexOf(wildcardSuffix)));
+    let relPath = path.relative(dir, file).replace(/\\/g, '/');
+    if (!relPath.startsWith('../'))
+      relPath = './' + relPath;
+    let condition = index === 0 ? '  ' : '  else ';
+    if (trailingWildcard && arg.endsWith('.js'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 3)})`;
+    else if (trailingWildcard && arg.endsWith('.json'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
+    else if (trailingWildcard && arg.endsWith('.node'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
+    else
+      condition += `if (arg === ${arg})`;
+    condition += ` return require(${JSON.stringify(relPath)});`;
+    return condition;
+  }).join('\n');
+
+  wildcardBlocks.push(`function __ncc_wildcard$${wildcardBlockIndex} (arg) {\n${optionConditions}\n}`);
+  return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam})`;
+}
+
 module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
@@ -335,7 +375,7 @@ module.exports = async function (content, map) {
   };
   const emitAssetDirectory = (wildcardPath, wildcards) => {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
-    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardPath.substr(0, wildcardIndex));
+    const dirIndex = wildcardIndex === -1 ? wildcardPath.length : wildcardPath.lastIndexOf(path.sep, wildcardIndex);
     const assetDirPath = wildcardPath.substr(0, dirIndex);
     const wildcardPattern = wildcardPath.substr(dirIndex).replace(wildcardRegEx, '**/*') || '/**/*';
     if (options.debugLog)
@@ -461,6 +501,8 @@ module.exports = async function (content, map) {
     };
     knownBindings.require.value.resolve[TRIGGER] = true;
   }
+
+  let wildcardBlocks = [];
 
   function setKnownBinding (name, value) {
     // require is somewhat special in that we shadow it but don't
@@ -601,9 +643,22 @@ module.exports = async function (content, map) {
         // we found the exact value for the require, and it used a binding from our analysis
         // -> inline the computed value for Webpack to use
         else if (typeof computed.value === 'string' && sawIdentifier) {
-          transformed = true;
-          magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
-          return this.skip();
+          if (computed.wildcards) {
+            const wildcardPath = path.resolve(dir, computed.value);
+            if (computed.wildcards.length === 1 && validAssetEmission(wildcardPath)) {
+              const emission = generateWildcardRequire(dir, wildcardPath, code.substring(computed.wildcards[0].start, computed.wildcards[0].end), wildcardBlocks, options.debugLog);
+              if (emission) {
+                magicString.overwrite(node.start, node.end, emission);
+                transformed = true;
+                return this.skip();
+              }
+            }
+          }
+          else {
+            magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
+            transformed = true;
+            return this.skip();
+          }
         }
         // branched require, and it used a binding from our analysis
         // -> inline the computed values for Webpack
@@ -997,6 +1052,8 @@ module.exports = async function (content, map) {
     return this.callback(null, code, map);
 
   assetEmissionPromises.then(() => {
+    if (wildcardBlocks.length)
+      magicString.appendLeft(ast.body[0].start, wildcardBlocks.join('\n') + '\n');
     code = magicString.toString();
     map = map || magicString.generateMap();
     if (map) {
@@ -1006,71 +1063,72 @@ module.exports = async function (content, map) {
     this.callback(null, code, map);
   });
 
-  function emitStaticChildAsset (wrapRequire = false) {
-    function validAssetEmission (assetPath) {
-      if (!assetPath)
-        return;
-      // do not emit own id
-      if (assetPath === id)
-        return;
-      let wildcardSuffix = '';
-      if (assetPath.endsWith(path.sep))
-        wildcardSuffix = path.sep;
-      else if (assetPath.endsWith(path.sep + WILDCARD))
-        wildcardSuffix = path.sep + WILDCARD;
-      else if (assetPath.endsWith(WILDCARD))
-        wildcardSuffix = WILDCARD;
-      // do not emit __dirname
-      if (assetPath === dir + wildcardSuffix)
-        return;
-      // do not emit cwd
-      if (assetPath === cwd + wildcardSuffix)
-        return;
-      // do not emit node_modules
-      if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
-        return;
-      // do not emit directories above __dirname
-      if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
-        return;
-      // do not emit asset directories higher than the node_modules base if a package
-      if (pkgBase) {
-        const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
-        if (!assetPath.startsWith(nodeModulesBase)) {
-          if (options.debugLog) {
-            if (assetEmission(assetPath))
-              console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
-          }
-          return;
-        }
-      }
-      // otherwise, do not emit assets outside of the cwd
-      else if (!assetPath.startsWith(cwd)) {
+  function validAssetEmission (assetPath) {
+    if (!assetPath)
+      return;
+    // do not emit own id
+    if (assetPath === id)
+      return;
+    let wildcardSuffix = '';
+    if (assetPath.endsWith(path.sep))
+      wildcardSuffix = path.sep;
+    else if (assetPath.endsWith(path.sep + WILDCARD))
+      wildcardSuffix = path.sep + WILDCARD;
+    else if (assetPath.endsWith(WILDCARD))
+      wildcardSuffix = WILDCARD;
+    // do not emit __dirname
+    if (assetPath === dir + wildcardSuffix)
+      return;
+    // do not emit cwd
+    if (assetPath === cwd + wildcardSuffix)
+      return;
+    // do not emit node_modules
+    if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
+      return;
+    // do not emit directories above __dirname
+    if (dir.startsWith(assetPath.substr(0, assetPath.length - wildcardSuffix.length) + path.sep))
+      return;
+    // do not emit asset directories higher than the node_modules base if a package
+    if (pkgBase) {
+      const nodeModulesBase = id.substr(0, id.lastIndexOf('node_modules')) + 'node_modules' + path.sep;
+      if (!assetPath.startsWith(nodeModulesBase)) {
         if (options.debugLog) {
           if (assetEmission(assetPath))
-            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+            console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the package base ' + pkgBase);
         }
         return;
       }
-      return assetEmission(assetPath);
     }
-    function assetEmission (assetPath) {
-      // verify the asset file / directory exists
-      const wildcardIndex = assetPath.indexOf(WILDCARD);
-      const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, assetPath.substr(0, wildcardIndex));
-      const basePath = assetPath.substr(0, dirIndex);
-      try {
-        const stats = statSync(basePath);
-        if (wildcardIndex !== -1 && stats.isFile())
-          return;
-        if (stats.isFile())
-          return emitAsset;
-        if (stats.isDirectory())
-          return emitAssetDirectory;
+    // otherwise, do not emit assets outside of the cwd
+    else if (!assetPath.startsWith(cwd)) {
+      if (options.debugLog) {
+        if (assetEmission(assetPath))
+          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
       }
-      catch (e) {
+      return;
+    }
+    return assetEmission(assetPath);
+  }
+  function assetEmission (assetPath) {
+    // verify the asset file / directory exists
+    const wildcardIndex = assetPath.indexOf(WILDCARD);
+    const dirIndex = wildcardIndex === -1 ? assetPath.length : assetPath.lastIndexOf(path.sep, wildcardIndex);
+    const basePath = assetPath.substr(0, dirIndex);
+    try {
+      const stats = statSync(basePath);
+      if (wildcardIndex !== -1 && stats.isFile())
         return;
-      }
+      if (stats.isFile())
+        return emitAsset;
+      if (stats.isDirectory())
+        return emitAssetDirectory;
     }
+    catch (e) {
+      return;
+    }
+  }
+
+  function emitStaticChildAsset (wrapRequire = false) {
     if ('value' in staticChildValue) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
