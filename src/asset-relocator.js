@@ -63,7 +63,7 @@ function getAssetState (options, compilation) {
   let state = stateMap.get(compilation);
   if (!state) {
     stateMap.set(compilation, state = {
-      entryId: getEntryId(compilation),
+      entryIds: getEntryIds(compilation),
       assets: Object.create(null),
       assetNames: Object.create(null),
       assetPermissions: Object.create(null),
@@ -81,30 +81,25 @@ function getAssetState (options, compilation) {
   return lastState = state;
 }
 
-function getEntryId (compilation) {
-  if (compilation.options && typeof compilation.options.entry === 'string') {
-    return resolve.sync(compilation.options.entry, { extensions });
-  }
-  if (compilation.entries && compilation.entries.length) {
-    try {
-      return resolve.sync(compilation.entries[0].name || compilation.entries[0].resource, { basedir: path.dirname(compilation.entries[0].context), extensions });
-    }
-    catch (e) {
-      return;
-    }
-  }
-  const entryMap = compilation.entryDependencies;
-  if (entryMap)
-    for (entry of entryMap.values()) {
-      if (entry.length) {
-        try {
-          return resolve.sync(entry[0].request, { basedir: path.dirname(entry[0].context), extensions });
-        }
-        catch (e) {
-          return;
-        }
+function getEntryIds (compilation) {
+  if (compilation.options.entry) {
+    if (typeof compilation.options.entry === 'string') {
+      try {
+        return [resolve.sync(compilation.options.entry, { extensions })];
+      }
+      catch (e) {
+        return;
       }
     }
+    else if (typeof compilation.options.entry === 'object') {
+      try {
+        return Object.values(compilation.options.entry).map(entry => resolve.sync(entry, { extensions }));
+      }
+      catch (e) {
+        return;
+      }
+    }
+  }
 }
 
 function assetBase (options) {
@@ -324,7 +319,7 @@ module.exports = async function (content, map) {
       cwd = process.cwd();
   }
   const assetState = getAssetState(options, this._compilation);
-  const entryId = assetState.entryId;
+  const entryIds = assetState.entryIds;
 
   // calculate the base-level package folder to load bindings from
   const pkgBase = getPackageBase(id);
@@ -744,7 +739,7 @@ module.exports = async function (content, map) {
           if (other.type === 'Identifier' && other.name === 'module') {
             // inline the require.main check to be the target require.main check if this is the entry,
             // and false otherwise
-            if (id === entryId) {
+            if (entryIds && entryIds.indexOf(id) !== -1) {
               // require.main === module -> __non_webpack_require__.main == __non_webpack_require__.cache[eval('__filename')]
               // can be simplified if we get a way to get outer "module" in Webpack
               magicString.overwrite(other.start, other.end, "__non_webpack_require__.cache[eval('__filename')]");
@@ -1188,11 +1183,11 @@ module.exports.getSymlinks = function() {
 };
 
 module.exports.initAssetPermissionsCache = function (compilation) {
-  const entryId = getEntryId(compilation);
-  if (!entryId)
+  const entryIds = getEntryIds(compilation);
+  if (!entryIds)
     return;
   const state = lastState = {
-    entryId: entryId,
+    entryIds: entryIds,
     assets: Object.create(null),
     assetNames: Object.create(null),
     assetPermissions: Object.create(null),
@@ -1200,7 +1195,7 @@ module.exports.initAssetPermissionsCache = function (compilation) {
     hadOptions: false
   };
   stateMap.set(compilation, state);
-  compilation.cache.get('/RelocateLoader/AssetState/' + entryId, null, (err, _assetState) => {
+  compilation.cache.get('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, (err, _assetState) => {
     if (err) console.error(err);
     if (_assetState) {
       const parsedState = JSON.parse(_assetState);
@@ -1211,7 +1206,7 @@ module.exports.initAssetPermissionsCache = function (compilation) {
     }
   });
   compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
-    compilation.cache.store('/RelocateLoader/AssetState/' + entryId, null, JSON.stringify({
+    compilation.cache.store('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, JSON.stringify({
       assetPermissions: state.assetPermissions,
       assetSymlinks: state.assetSymlinks
     }), (err) => {
