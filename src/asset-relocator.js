@@ -506,6 +506,10 @@ module.exports = async function (content, map) {
       }
     };
     knownBindings.require.value.resolve[TRIGGER] = true;
+    knownBindings.module = {
+      shadowDepth: 0,
+      value: UNKNOWN
+    };
   }
 
   let wildcardBlocks = [];
@@ -760,6 +764,19 @@ module.exports = async function (content, map) {
           // leave require.ensure to webpack
           return this.skip();
         }
+      }
+      // module.require handling
+      else if (!isESM && node.type === 'MemberExpression' &&
+               node.object.type === 'Identifier' &&
+               node.object.name === 'module' &&
+               knownBindings.module.shadowDepth === 0 &&
+               node.property.type === 'Identifier' &&
+               !node.computed &&
+               node.property.name === 'require') {
+        magicString.overwrite(node.start, node.end, 'require');
+        node.type = 'Identifier';
+        node.name = 'require';
+        transformed = true;
       }
       // Call expression cases and asset triggers
       // - fs triggers: fs.readFile(...)
