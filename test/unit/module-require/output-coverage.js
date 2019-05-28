@@ -89,11 +89,15 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
+function x (module) {
+}
+
 exports.asdf = 'asdf';
 console.log(__webpack_require__(0));
 
 if (true)
   console.log("yes");
+
 
 /***/ })
 /******/ ]);

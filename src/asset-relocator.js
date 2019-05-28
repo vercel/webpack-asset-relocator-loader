@@ -501,10 +501,6 @@ module.exports = async function (content, map) {
       }
     };
     knownBindings.require.value.resolve[TRIGGER] = true;
-    knownBindings.module = {
-      shadowDepth: 0,
-      value: UNKNOWN
-    };
   }
 
   let wildcardBlocks = [];
@@ -764,7 +760,7 @@ module.exports = async function (content, map) {
       else if (!isESM && node.type === 'MemberExpression' &&
                node.object.type === 'Identifier' &&
                node.object.name === 'module' &&
-               knownBindings.module.shadowDepth === 0 &&
+               'module' in knownBindings === false &&
                node.property.type === 'Identifier' &&
                !node.computed &&
                node.property.name === 'require') {
