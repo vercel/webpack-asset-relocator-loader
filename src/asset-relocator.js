@@ -1057,7 +1057,12 @@ module.exports = async function (content, map) {
           }
         }
         // no static value -> see if we should emit the asset if it exists
-        emitStaticChildAsset();
+        if (!validateInliningPosition(staticChildNode, node)) {
+          staticChildNode = staticChildValue = undefined;
+        }
+        else {
+          emitStaticChildAsset();
+        }
       }
     }
   });
@@ -1076,6 +1081,21 @@ module.exports = async function (content, map) {
     }
     this.callback(null, code, map);
   });
+
+  function validateInliningPosition (node, parent) {
+    // do not inline into "require.cache" expressions
+    // (required for Next.js)
+    if (parent.type === 'MemberExpression' &&
+        parent.object.type === 'MemberExpression' &&
+        parent.object.object.type === 'Identifier' &&
+        parent.object.object.name === 'require' &&
+        knownBindings.require.shadowDepth === 0 &&
+        parent.object.property.type === 'Identifier' &&
+        parent.object.property.name === 'cache') {
+      return false;
+    }
+    return true;
+  }
 
   function validAssetEmission (assetPath) {
     if (!assetPath)
