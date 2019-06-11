@@ -655,7 +655,7 @@ module.exports = async function (content, map) {
               }
             }
           }
-          else {
+          else if (computed.value) {
             magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
             transformed = true;
             return this.skip();
