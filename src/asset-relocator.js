@@ -889,7 +889,7 @@ module.exports = async function (content, map) {
           }
         }
       }
-      else if (node.type === 'VariableDeclaration') {
+      else if (node.type === 'VariableDeclaration' && parent.type !== 'ForStatement') {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
           const computed = computePureStaticValue(decl.init, false).result;
