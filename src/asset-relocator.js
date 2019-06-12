@@ -56,6 +56,14 @@ function isIdentifierRead(node, parent) {
   }
 }
 
+function isVarLoop (node) {
+  return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement';
+}
+
+function isLoop (node) {
+  return node.type === 'ForStatement' || node.type === 'ForInStatement' || node.type === 'ForOfStatement' || node.type === 'WhileStatement' || node.type === 'DoWhileStatement';
+}
+
 const stateMap = new Map();
 let lastState;
 
@@ -889,7 +897,7 @@ module.exports = async function (content, map) {
           }
         }
       }
-      else if (node.type === 'VariableDeclaration') {
+      else if (node.type === 'VariableDeclaration' && !isVarLoop(parent)) {
         for (const decl of node.declarations) {
           if (!decl.init) continue;
           const computed = computePureStaticValue(decl.init, false).result;
@@ -920,7 +928,7 @@ module.exports = async function (content, map) {
           }
         }
       }
-      else if (node.type === 'AssignmentExpression') {
+      else if (node.type === 'AssignmentExpression' && !isLoop(parent)) {
         const computed = computePureStaticValue(node.right, false).result;
         if (computed && 'value' in computed) {
           // var known = ...
