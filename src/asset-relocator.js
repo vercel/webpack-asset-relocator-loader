@@ -989,11 +989,11 @@ module.exports = async function (content, map) {
             parent.type === 'VariableDeclarator' &&
             parent.id.type === 'Identifier') {
           fnName = parent.id;
-          args = (node.arguments || node.params);
+          args = node.arguments || node.params;
         }
         else if (node.id) {
           fnName = node.id;
-          args = node.arguments;
+          args = node.arguments || node.params;
         }
         if (fnName && node.body.body) {
           let requireDecl, requireDeclaration, returned = false;
@@ -1032,7 +1032,7 @@ module.exports = async function (content, map) {
             boundRequireName = fnName.name + '$$mod';
             setKnownBinding(fnName.name, BOUND_REQUIRE);
             const newFn = prefix + code.substring(node.start, fnName.start) + boundRequireName + code.substring(fnName.end, args[0].start + !wrapArgs) +
-                (wrapArgs ? '(' : '') + requireDecl.id.name + ', ' + code.substring(args[0].start, args[args.length - 1].end) + (wrapArgs ? ')' : '') + 
+                (wrapArgs ? '(' : '') + requireDecl.id.name + ', ' + code.substring(args[0].start, args[args.length - 1].end + !wrapArgs) + (wrapArgs ? ')' : '') + 
                 code.substring(args[0].end + !wrapArgs, requireDeclaration.start) + code.substring(requireDeclaration.end, node.end);
             magicString.appendRight(node.end, newFn);
           }
