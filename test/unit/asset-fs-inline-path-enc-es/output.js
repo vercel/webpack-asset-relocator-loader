@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -97,15 +98,14 @@ module.exports = require("fs");
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* WEBPACK VAR INJECTION */(function(__dirname) {/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(fs__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_1__);
 
 
 
-console.log(fs__WEBPACK_IMPORTED_MODULE_0___default.a.readFileSync(__dirname + '/asset.txt', 'utf8'));
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
+console.log(fs__WEBPACK_IMPORTED_MODULE_0___default.a.readFileSync(__webpack_require__.ab + "asset.txt", 'utf8'));
 
 /***/ }),
 /* 2 */
