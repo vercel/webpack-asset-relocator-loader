@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.p = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -115,7 +116,7 @@ var npm3Path = path.resolve(__dirname, '..', platform);
 var npm2Path = path.resolve(__dirname, '.', platform);
 
 var npm3Binary = path.join(npm3Path, binary);
-var npm2Binary = __dirname + '/ffmpeg.exe';
+var npm2Binary = __webpack_require__.p + '/ffmpeg.exe';
 
 var npm3Package = path.join(npm3Path, 'package.json');
 var npm2Package = path.join(npm2Path, 'package.json');
@@ -124,8 +125,8 @@ var ffmpegPath, packageJson;
 
 if (verifyFile(npm3Binary)) {
     ffmpegPath = npm3Binary;
-} else if (verifyFile(__dirname + '/ffmpeg.exe')) {
-    ffmpegPath = __dirname + '/ffmpeg.exe';
+} else if (verifyFile(__webpack_require__.p + '/ffmpeg.exe')) {
+    ffmpegPath = __webpack_require__.p + '/ffmpeg.exe';
 } else {
     throw 'Could not find ffmpeg executable, tried "' + npm3Binary + '" and "' + npm2Binary + '"';
 }
@@ -134,7 +135,7 @@ var version = packageJson.ffmpeg || packageJson.version;
 var url = packageJson.homepage;
 
 module.exports = {
-    path: __dirname + '/ffmpeg.exe',
+    path: __webpack_require__.p + '/ffmpeg.exe',
     version: version,
     url: url
 };

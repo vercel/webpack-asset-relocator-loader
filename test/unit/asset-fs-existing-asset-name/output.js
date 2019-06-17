@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.p = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -89,10 +90,9 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
-console.log(fs.readFileSync(__dirname + '/existing1.txt'));
+const fs = __webpack_require__(1);
+console.log(fs.readFileSync(__webpack_require__.p + '/existing1.txt'));
 
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

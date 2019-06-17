@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.p = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -110,9 +111,9 @@ Server.prototype.serveClient = function(v){
     return require.resolve(file);
   };
   if (v && !clientSource) {
-    clientSource = read(__dirname + '/socket.io.js', 'utf-8');
+    clientSource = read(__webpack_require__.p + '/socket.io.js', 'utf-8');
     try {
-      clientSourceMap = read(__dirname + '/socket.io.js.map', 'utf-8');
+      clientSourceMap = read(__webpack_require__.p + '/socket.io.js.map', 'utf-8');
     } catch(err) {
       debug('could not load sourcemap file');
     }
