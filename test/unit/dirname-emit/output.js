@@ -90,14 +90,8 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
-const { join } = __webpack_require__(2);
+console.log(fs.readdirSync(__dirname + '/dirname-emit'));
 
-console.log(fs.readFileSync(__dirname + '/asset.txt', 'utf8'));
-
-(function () {
-  var join = () => 'nope';
-  console.log(fs.readFileSync(join(__dirname + '/asset-fs-inline-path-shadow', 'asset.txt'), 'utf8'));
-})();
 /* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
@@ -105,12 +99,6 @@ console.log(fs.readFileSync(__dirname + '/asset.txt', 'utf8'));
 /***/ (function(module, exports) {
 
 module.exports = require("fs");
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports) {
-
-module.exports = require("path");
 
 /***/ })
 /******/ ]);

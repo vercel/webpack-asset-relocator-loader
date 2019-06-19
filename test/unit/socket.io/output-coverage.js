@@ -103,7 +103,7 @@ Server.prototype.serveClient = function(v){
   if (!arguments.length) return this._serveClient;
   this._serveClient = v;
   var resolvePath = function(file){
-    var filepath = path.resolve(__dirname, './../../', file);
+    var filepath = path.resolve(__dirname + '/socket.io', './../../', file);
     if (exists(filepath)) {
       return filepath;
     }

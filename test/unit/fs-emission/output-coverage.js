@@ -95,7 +95,7 @@ fs.readFile('./asset1.txt')
 
 fs.readFile(__dirname + '/asset2.txt')
 
-const _basePath = __dirname;
+const _basePath = __dirname + '/fs-emission';
 const asset3 = 'asset3.txt';
 fs.readFileSync(__dirname + '/asset3.txt', 'utf8');
 

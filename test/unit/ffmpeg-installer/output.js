@@ -112,7 +112,7 @@ var packageName = '@ffmpeg-installer/' + platform;
 var binary = os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg.exe';
 
 var npm3Path = path.resolve(__dirname, '..', platform);
-var npm2Path = path.resolve(__dirname, '.', platform);
+var npm2Path = __dirname + '/ffmpeg-installer';
 
 var npm3Binary = path.join(npm3Path, binary);
 var npm2Binary = __dirname + '/ffmpeg.exe';

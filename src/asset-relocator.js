@@ -1098,9 +1098,6 @@ module.exports = async function (content, map) {
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD))
       wildcardSuffix = WILDCARD;
-    // do not emit __dirname
-    if (assetPath === dir + wildcardSuffix)
-      return;
     // do not emit cwd
     if (assetPath === cwd + wildcardSuffix)
       return;
