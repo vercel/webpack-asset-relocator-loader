@@ -104,7 +104,7 @@ for (var i = 0; i < binaryLocations.length; i++) {
       var nodeInfo;
       if (err.code === 'MODULE_NOT_FOUND') {
         // none of the three binaries could be found
-        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __webpack_require__(2).resolve(__dirname, x)).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
+        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __dirname + '/oracledb/' + x).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
       } else {
         nodeInfo = `\n  Node.js require('oracledb') error was:\n  ${err.message}\n  ${nodbUtil.getInstallHelp()}\n`;
       }
@@ -120,12 +120,6 @@ for (var i = 0; i < binaryLocations.length; i++) {
 /***/ (function(module, exports) {
 
 module.exports = 'oracledb';
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports) {
-
-module.exports = require("path");
 
 /***/ })
 /******/ ]);
