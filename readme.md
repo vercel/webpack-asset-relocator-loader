@@ -85,6 +85,5 @@ These include:
 
 * `require.main === module` checks are retained for the entry point being built.
 * `options.wrapperCompatibility`: Automatically handles common AMD / Browserify wrappers to ensure they are properly built by Webpack. See the `utils/wrappers.js` file for the exact transformations currently provided.
-* `options.escapeNonAnalyzableRequires`: Determines when a `require` statement is definitely not analyzable by Webpack, and replaces it with the outer `__non_webpack_require__`. This is useful for things like plugin systems that take a `pluginModule` string and then try to require it, but still won't correcly support contextual requires for local modules.
 * `require.resolve` support in the target environment, while also supporting emission in the build environment.
 * Dynamic `require` statements are analyzed to exact paths wherever possible, and when not possible to analyze, turned into dynamic requires in the target environment.
