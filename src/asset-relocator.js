@@ -298,7 +298,7 @@ module.exports = async function (content, map) {
     mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
       let relBase = '';
       if (chunk.name) {
-        relBase = path.relative(path.dirname(chunk.name), '.');
+        relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
         if (relBase.length)
           relBase = '/' + relBase;
       }
@@ -408,7 +408,7 @@ module.exports = async function (content, map) {
     const files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }).filter(name => 
       !excludeAssetExtensions.has(path.extname(name)) &&
       !excludeAssetFiles.has(path.basename(name)) &&
-      !name.endsWith(path.sep)
+      !name.endsWith('/')
     );
 
     if (!files.length)
@@ -429,7 +429,7 @@ module.exports = async function (content, map) {
             readlink(file, (err, path) => err ? reject(err) : resolve(path));
           });
           const baseDir = path.dirname(file);
-          assetState.assetSymlinks[assetBase(options) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink));
+          assetState.assetSymlinks[assetBase(options) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink)).replace(/\\/g, '/');
         }
         else {
           assetState.assetPermissions[assetBase(options) + name + file.substr(assetDirPath.length)] = stats.mode;
