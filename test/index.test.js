@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const webpack = require("webpack");
 const MemoryFS = require("memory-fs");
 
@@ -45,6 +46,9 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
             loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
             options: {
               existingAssetNames: ['existing.txt'],
+              filterAssetBase: path.resolve('test'),
+              emitDirnameAll: true,
+              emitFilterAssetBaseAll: true,
               wrapperCompatibility: true,
               debugLog: true,
               production: true

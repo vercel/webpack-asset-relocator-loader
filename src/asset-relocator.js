@@ -1098,8 +1098,11 @@ module.exports = async function (content, map) {
       wildcardSuffix = path.sep + WILDCARD;
     else if (assetPath.endsWith(WILDCARD))
       wildcardSuffix = WILDCARD;
+    // do not emit __dirname
+    if (!options.emitDirnameAll && (assetPath === dir + wildcardSuffix))
+      return;
     // do not emit cwd
-    if (assetPath === cwd + wildcardSuffix)
+    if (!options.emitFilterAssetBaseAll && (assetPath === (options.filterAssetBase || cwd) + wildcardSuffix))
       return;
     // do not emit node_modules
     if (assetPath.endsWith(path.sep + 'node_modules' + wildcardSuffix))
@@ -1118,11 +1121,11 @@ module.exports = async function (content, map) {
         return;
       }
     }
-    // otherwise, do not emit assets outside of the cwd
-    else if (!assetPath.startsWith(cwd)) {
+    // otherwise, do not emit assets outside of the filterAssetBase
+    else if (!assetPath.startsWith(options.filterAssetBase || cwd)) {
       if (options.debugLog) {
         if (assetEmission(assetPath))
-          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the process directory ' + cwd);
+          console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the filterAssetBase directory ' + (options.filterAssetBase || cwd));
       }
       return;
     }
