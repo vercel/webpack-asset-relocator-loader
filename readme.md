@@ -36,6 +36,14 @@ Any `.node` files included will also support binary relocation.
           options: {
             // optional, base folder for asset emission (eg assets/name.ext)
             outputAssetBase: 'assets',
+            // optional, restrict asset emissions to only the given folder.
+            filterAssetBase: process.cwd(),
+            // optional, permit entire __dirname emission
+            // eg `const nonAnalyzable = __dirname` can emit everything in the folder
+            emitDirnameAll: false,
+            // optional, permit entire filterAssetBase emission
+            // eg `const nonAnalyzable = process.cwd()` can emit everything in the cwd()
+            emitFilterAssetBaseAll: false,
             // optional, a list of asset names already emitted or
             // defined that should not be emitted
             existingAssetNames: []

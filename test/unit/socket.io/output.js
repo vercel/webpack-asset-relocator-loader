@@ -110,9 +110,9 @@ Server.prototype.serveClient = function(v){
     return require.resolve(file);
   };
   if (v && !clientSource) {
-    clientSource = read(__dirname + '/socket.io.js', 'utf-8');
+    clientSource = read(resolvePath( 'socket.io-client/dist/socket.io.js'), 'utf-8');
     try {
-      clientSourceMap = read(__dirname + '/socket.io.js.map', 'utf-8');
+      clientSourceMap = read(resolvePath( 'socket.io-client/dist/socket.io.js.map'), 'utf-8');
     } catch(err) {
       debug('could not load sourcemap file');
     }
