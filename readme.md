@@ -94,7 +94,7 @@ webpack({
   plugins: [
     {
       apply(compiler) {
-        compiler.hooks.compilation.tap("ncc", compilation => {
+        compiler.hooks.compilation.tap("webpack-asset-relocator-loader", compilation => {
           relocateLoader.initAssetCache(compilation, outputAssetBase);
         });
       }
