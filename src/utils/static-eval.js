@@ -302,9 +302,6 @@ const visitors = {
     }
     return obj;
   },
-  ReturnStatement (node, walk) {
-    return walk(node.argument);
-  },
   TemplateLiteral (node, walk) {
     let val = { value: '' };
     for (var i = 0; i < node.expressions.length; i++) {
