@@ -119,13 +119,6 @@ function assetBase (options) {
   return outputAssetBase + '/';
 }
 
-function relAssetPath (context, options) {
-  const isChunk = context._module.reasons && context._module.reasons.every(reason => reason.module);
-  const filename = isChunk && context._compilation.outputOptions.chunkFilename || context._compilation.outputOptions.filename;
-  const backtrackDepth = filename.split(/[\\/]/).length - 1;
-  return '../'.repeat(backtrackDepth) + assetBase(options);
-}
-
 const staticProcess = {
   cwd: () => {
     return cwd;
@@ -287,14 +280,33 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
   return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam})`;
 }
 
+const hooked = new WeakSet();
+
 module.exports = async function (content, map) {
   if (this.cacheable)
     this.cacheable();
   this.async();
   const id = this.resourcePath;
   const dir = path.dirname(id);
+
+  // injection to set __webpack_require__.ab
+  const options = getOptions(this);
+  const { mainTemplate } = this._compilation;
+  if (!hooked.has(mainTemplate)) {
+    hooked.add(mainTemplate);
+
+    mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
+      let relBase = '';
+      if (chunk.name) {
+        relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
+        if (relBase.length)
+          relBase = '/' + relBase;
+      }
+      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(options))};`;
+    });
+  }
+
   if (id.endsWith('.node')) {
-    const options = getOptions(this);
     const assetState = getAssetState(options, this._compilation);
     const pkgBase = getPackageBase(this.resourcePath) || dir;
     await sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
@@ -307,7 +319,7 @@ module.exports = async function (content, map) {
     assetState.assetPermissions[name] = permissions;
     this.emitFile(assetBase(options) + name, content);
 
-    this.callback(null, 'module.exports = __non_webpack_require__("./' + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + '")');
+    this.callback(null, 'module.exports = __non_webpack_require__(__webpack_require__.ab + ' + JSON.stringify(name) + ')');
     return;
   }
 
@@ -315,8 +327,7 @@ module.exports = async function (content, map) {
     return this.callback(null, code, map);
 
   let code = content.toString();
-
-  const options = getOptions(this);
+  
   if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN) {
     staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
   }
@@ -377,7 +388,7 @@ module.exports = async function (content, map) {
         this.emitFile(assetBase(options) + name, source);
       }
     });
-    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name).slice(1, -1) + "'";
+    return "__webpack_require__.ab + " + JSON.stringify(name);
   };
   const emitAssetDirectory = (wildcardPath, wildcards) => {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
@@ -452,7 +463,7 @@ module.exports = async function (content, map) {
         assetExpressions += " + \'" + JSON.stringify(curPattern).slice(1, -1) + "'";
       }
     }
-    return "__dirname + '/" + relAssetPath(this, options) + JSON.stringify(name + firstPrefix).slice(1, -1) + "'" + assetExpressions;
+    return "__webpack_require__.ab + " + JSON.stringify(name + firstPrefix) + assetExpressions;
   };
 
   let assetEmissionPromises = Promise.resolve();
