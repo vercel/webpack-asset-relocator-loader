@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -88,12 +87,13 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-function f () {
-  return __webpack_require__.ab + "return-emission";
+/* WEBPACK VAR INJECTION */(function(__dirname) {function f () {
+  return __dirname + '/return-emission';
 }
 
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })
 /******/ ]);

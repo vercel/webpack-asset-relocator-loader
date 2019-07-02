@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -90,8 +89,9 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const path = __webpack_require__(1);
-let moduleJsPath = isHarmony ? __webpack_require__.ab + "asset1.txt" : __webpack_require__.ab + "asset2.txt";
+/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+let moduleJsPath = isHarmony ? __dirname + '/asset1.txt' : __dirname + '/asset2.txt';
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

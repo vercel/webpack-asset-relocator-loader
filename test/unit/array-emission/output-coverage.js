@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -91,15 +90,16 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
+/* WEBPACK VAR INJECTION */(function(__dirname) {
 
 const fs = __webpack_require__(1);
 
 const REPORT_JAVASCRIPT = [
-  fs.readFileSync(__webpack_require__.ab + "util.js", 'utf8'),
-  fs.readFileSync(__webpack_require__.ab + "dom.js", 'utf8'),
+  fs.readFileSync(__dirname + '/util.js', 'utf8'),
+  fs.readFileSync(__dirname + '/dom.js', 'utf8'),
 ].join(';\n');
 
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

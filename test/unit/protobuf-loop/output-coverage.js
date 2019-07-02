@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -91,23 +90,24 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
+/* WEBPACK VAR INJECTION */(function(__dirname) {
 const path = __webpack_require__(1);
 // Load Google's well-known proto files that aren't exposed by Protobuf.js.
 {
     // Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
     // and wrappers. compiler/plugin is excluded in Protobuf.js and here.
     var wellKnownProtos = ['asset1', 'asset2'];
-    var sourceDir = __webpack_require__.ab + "assets";
+    var sourceDir = __dirname + '/assets';
     for (var _i = 0, wellKnownProtos_1 = wellKnownProtos; _i < wellKnownProtos_1.length; _i++) {
         var proto = wellKnownProtos_1[_i];
-        var file = __webpack_require__.ab + "assets/" + proto + '.txt';
+        var file = __dirname + '/assets/' + proto + '.txt';
         var descriptor_1 = Protobuf.loadSync(file).toJSON();
         // @ts-ignore
         Protobuf.common(proto, descriptor_1.nested.google.nested);
     }
 }
 //# sourceMappingURL=index.js.map
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
