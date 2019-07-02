@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -89,12 +90,11 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
+const path = __webpack_require__(1);
 
-fs.readFileSync(__dirname + '/wildcard2/' + unknown + '/asset1.txt');
+fs.readFileSync(__webpack_require__.ab + "wildcard2/" + unknown + '/asset1.txt');
 
 
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

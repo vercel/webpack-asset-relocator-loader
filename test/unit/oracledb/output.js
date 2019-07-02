@@ -79,6 +79,7 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
+/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -89,7 +90,7 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {var binaryLocations = [
+var binaryLocations = [
   '../' + nodbUtil.RELEASE_DIR + '/' + nodbUtil.BINARY_FILE,  // pre-built binary
   '../' + nodbUtil.RELEASE_DIR + '/' + 'oracledb.node',       // binary built from source
   '../build/Debug/oracledb.node'                              // debug binary
@@ -104,7 +105,7 @@ for (var i = 0; i < binaryLocations.length; i++) {
       var nodeInfo;
       if (err.code === 'MODULE_NOT_FOUND') {
         // none of the three binaries could be found
-        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __dirname + '/oracledb/' + x).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
+        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __webpack_require__.ab + "oracledb/" + x).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
       } else {
         nodeInfo = `\n  Node.js require('oracledb') error was:\n  ${err.message}\n  ${nodbUtil.getInstallHelp()}\n`;
       }
@@ -113,7 +114,6 @@ for (var i = 0; i < binaryLocations.length; i++) {
   }
 }
 
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
