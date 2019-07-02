@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -90,10 +89,11 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const path = __webpack_require__(1);
+/* WEBPACK VAR INJECTION */(function(__dirname) {const path = __webpack_require__(1);
 
 var binding_path =
-    binary.find(__webpack_require__.ab + "package.json");
+    binary.find(__dirname + '/package.json');
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

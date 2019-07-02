@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -88,16 +87,17 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-const asset1 = __webpack_require__.ab + "asset1.txt";
+/* WEBPACK VAR INJECTION */(function(__dirname) {const asset1 = __dirname + '/asset1.txt';
 
 function loader () {}
-loader(__webpack_require__.ab + "asset2.txt");
+loader(__dirname + '/asset2.txt');
 
-unknown(__webpack_require__.ab + "asset1.txt");
+unknown(__dirname + '/asset1.txt');
 
-const thing = asdf(__webpack_require__.ab + "asset3.txt");
+const thing = asdf(__dirname + '/asset3.txt');
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })
 /******/ ]);

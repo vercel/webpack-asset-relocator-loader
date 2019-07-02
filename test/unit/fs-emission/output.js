@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -90,16 +89,17 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const fs = __webpack_require__(1);
+/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
 
 fs.readFile('./asset1.txt')
 
-fs.readFile(__webpack_require__.ab + "asset2.txt")
+fs.readFile(__dirname + '/asset2.txt')
 
-const _basePath = __webpack_require__.ab + "fs-emission";
+const _basePath = __dirname + '/fs-emission';
 const asset3 = 'asset3.txt';
-fs.readFileSync(__webpack_require__.ab + "asset3.txt", 'utf8');
+fs.readFileSync(__dirname + '/asset3.txt', 'utf8');
 
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

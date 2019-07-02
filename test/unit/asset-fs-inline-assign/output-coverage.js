@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -90,15 +89,16 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const fs = __webpack_require__(1);
+/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1);
 const { join } = __webpack_require__(2);
 
-console.log(fs.readFileSync(__webpack_require__.ab + "asset.txt", 'utf8'));
+console.log(fs.readFileSync(__dirname + '/asset.txt', 'utf8'));
 
 (function () {
   var join = () => 'nope';
-  console.log(fs.readFileSync(join(__webpack_require__.ab + "asset-fs-inline-assign", 'asset.txt'), 'utf8'));
+  console.log(fs.readFileSync(join(__dirname + '/asset-fs-inline-assign', 'asset.txt'), 'utf8'));
 })();
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */

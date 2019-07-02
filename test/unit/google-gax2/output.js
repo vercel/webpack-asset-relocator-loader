@@ -79,7 +79,6 @@ module.exports =
 /******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-/******/ 	__webpack_require__.ab = __dirname + "/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -88,10 +87,11 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-var googleProtoFilesDir = __webpack_require__.ab + "google-gax2";
+/* WEBPACK VAR INJECTION */(function(__dirname) {var googleProtoFilesDir = __dirname + '/google-gax2';
 
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })
 /******/ ]);
