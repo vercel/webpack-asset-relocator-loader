@@ -110,7 +110,8 @@ function getEntryIds (compilation) {
   }
 }
 
-function assetBase (outputAssetBase) {
+function assetBase (options) {
+  const outputAssetBase = options && options.outputAssetBase;
   if (!outputAssetBase)
     return '';
   if (outputAssetBase.endsWith('/') || outputAssetBase.endsWith('\\'))
@@ -280,22 +281,6 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 }
 
 const hooked = new WeakSet();
-function injectPathHook (compilation, outputAssetBase) {
-  const { mainTemplate } = compilation;
-  if (!hooked.has(mainTemplate)) {
-    hooked.add(mainTemplate);
-
-    mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
-      let relBase = '';
-      if (chunk.name) {
-        relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
-        if (relBase.length)
-          relBase = '/' + relBase;
-      }
-      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
-    });
-  }
-}
 
 module.exports = async function (content, map) {
   if (this.cacheable)
@@ -306,13 +291,25 @@ module.exports = async function (content, map) {
 
   // injection to set __webpack_require__.ab
   const options = getOptions(this);
+  const { mainTemplate } = this._compilation;
+  if (!hooked.has(mainTemplate)) {
+    hooked.add(mainTemplate);
 
-  injectPathHook(this._compilation, options.outputAssetBase);
+    mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
+      let relBase = '';
+      if (chunk.name) {
+        relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
+        if (relBase.length)
+          relBase = '/' + relBase;
+      }
+      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(options))};`;
+    });
+  }
 
   if (id.endsWith('.node')) {
     const assetState = getAssetState(options, this._compilation);
     const pkgBase = getPackageBase(this.resourcePath) || dir;
-    await sharedlibEmit(pkgBase, assetState, assetBase(options.outputAssetBase), this.emitFile);
+    await sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
 
     const name = getUniqueAssetName(id.substr(pkgBase.length + 1), id, assetState.assetNames);
     
@@ -320,7 +317,7 @@ module.exports = async function (content, map) {
       stat(id, (err, stats) => err ? reject(err) : resolve(stats.mode))
     );
     assetState.assetPermissions[name] = permissions;
-    this.emitFile(assetBase(options.outputAssetBase) + name, content);
+    this.emitFile(assetBase(options) + name, content);
 
     this.callback(null, 'module.exports = __non_webpack_require__(__webpack_require__.ab + ' + JSON.stringify(name) + ')');
     return;
@@ -357,7 +354,7 @@ module.exports = async function (content, map) {
         outName = assetPath.substr(pkgBase.length).replace(/\\/g, '/');
       // If the asset is a ".node" binary, then glob for possible shared
       // libraries that should also be included
-      const nextPromise = sharedlibEmit(pkgBase, assetState, assetBase(options.outputAssetBase), this.emitFile);
+      const nextPromise = sharedlibEmit(pkgBase, assetState, assetBase(options), this.emitFile);
       assetEmissionPromises = assetEmissionPromises.then(() => {
         return nextPromise;
       });
@@ -384,11 +381,11 @@ module.exports = async function (content, map) {
           readlink(assetPath, (err, path) => err ? reject(err) : resolve(path));
         });
         const baseDir = path.dirname(assetPath);
-        assetState.assetSymlinks[assetBase(options.outputAssetBase) + name] = path.relative(baseDir, path.resolve(baseDir, symlink));
+        assetState.assetSymlinks[assetBase(options) + name] = path.relative(baseDir, path.resolve(baseDir, symlink));
       }
       else {
-        assetState.assetPermissions[assetBase(options.outputAssetBase) + name] = stats.mode;
-        this.emitFile(assetBase(options.outputAssetBase) + name, source);
+        assetState.assetPermissions[assetBase(options) + name] = stats.mode;
+        this.emitFile(assetBase(options) + name, source);
       }
     });
     return "__webpack_require__.ab + " + JSON.stringify(name);
@@ -432,11 +429,11 @@ module.exports = async function (content, map) {
             readlink(file, (err, path) => err ? reject(err) : resolve(path));
           });
           const baseDir = path.dirname(file);
-          assetState.assetSymlinks[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink)).replace(/\\/g, '/');
+          assetState.assetSymlinks[assetBase(options) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink)).replace(/\\/g, '/');
         }
         else {
-          assetState.assetPermissions[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = stats.mode;
-          this.emitFile(assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length), source);
+          assetState.assetPermissions[assetBase(options) + name + file.substr(assetDirPath.length)] = stats.mode;
+          this.emitFile(assetBase(options) + name + file.substr(assetDirPath.length), source);
         }
       }));
     });
@@ -1217,8 +1214,7 @@ module.exports.getSymlinks = function() {
     return lastState.assetSymlinks;
 };
 
-module.exports.initAssetCache = module.exports.initAssetPermissionsCache = function (compilation, outputAssetBase) {
-  injectPathHook(compilation, outputAssetBase);
+module.exports.initAssetPermissionsCache = function (compilation) {
   const entryIds = getEntryIds(compilation);
   if (!entryIds)
     return;

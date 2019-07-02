@@ -62,47 +62,6 @@ Any `.node` files included will also support binary relocation.
 
 Assets will be emitted using `emitAsset`, with their references updated in the code by the loader to the new output location.
 
-### Asset Permissions and Symlinks
-
-Asset symlinks and permissions are maintained in the loader, but aren't passed to Webpack as `emit` doesn't support these.
-
-This information can be obtained from the loader through the API calls `getAssetPermissions()` and `getSymlinks()`:
-
-```js
-const relocateLoader = require('webpack-asset-relocator-loader');
-
-webpack({...}).run((err, stats) => {
-  const assetPermissions = relocateLoader.getAssetPermissions();
-  const symlinks = relocateLoader.getSymlinks();
-});
-```
-
-They will always contain the most recent build state.
-
-### Caching
-
-When using Webpack 5 caching, asset permissions need to be maintained through their own cache, and the public path needs to be injected into the build.
-
-To ensure these cases work out, make sure to run `initAssetCache` in the build, with the `options.outputAssetBase` argument:
-
-```js
-const relocateLoader = require('webpack-asset-relocator-loader');
-
-webpack({
-  // ...
-
-  plugins: [
-    {
-      apply(compiler) {
-        compiler.hooks.compilation.tap("webpack-asset-relocator-loader", compilation => {
-          relocateLoader.initAssetCache(compilation, outputAssetBase);
-        });
-      }
-    }
-  ]
-});
-```
-
 ## How it Works
 
 ### Asset Relocation
