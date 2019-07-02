@@ -298,7 +298,7 @@ module.exports = async function (content, map) {
     mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
       let relBase = '';
       if (chunk.name) {
-        relBase = path.relative(path.dirname(chunk.name), '.');
+        relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
         if (relBase.length)
           relBase = '/' + relBase;
       }
