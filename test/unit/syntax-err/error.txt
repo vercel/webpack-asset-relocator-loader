@@ -1,0 +1,6 @@
+ModuleBuildError: Module build failed (from ./dist/index.js):
+SyntaxError: Unexpected token ([loc]) parsing [base]/test/unit/syntax-err/input.js
+1: // if (typeof __filename > 'undefine') {
+2:   +
+      ^
+    at Object.module.exports ([base]/dist/index.js:[loc])
