@@ -485,8 +485,8 @@ module.exports = async function (content, map) {
       isESM = true;
     }
     catch (e) {
-      this.callback(e);
-      return;
+      // Parser errors just skip analysis
+      return this.callback(null, code, map);
     }
   }
 
