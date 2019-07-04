@@ -263,12 +263,12 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
     if (!relPath.startsWith('../'))
       relPath = './' + relPath;
     let condition = index === 0 ? '  ' : '  else ';
-    if (trailingWildcard && arg.endsWith('.js'))
-      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 3)})`;
-    else if (trailingWildcard && arg.endsWith('.json'))
-      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
-    else if (trailingWildcard && arg.endsWith('.node'))
-      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 5)})`;
+    if (trailingWildcard && arg.endsWith('.js"'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 4)}")`;
+    else if (trailingWildcard && arg.endsWith('.json"'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 6)}")`;
+    else if (trailingWildcard && arg.endsWith('.node"'))
+      condition += `if (arg === ${arg} || arg === ${arg.substr(0, arg.length - 6)}")`;
     else
       condition += `if (arg === ${arg})`;
     condition += ` return require(${JSON.stringify(relPath)});`;

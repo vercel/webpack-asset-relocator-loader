@@ -91,9 +91,9 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 function __ncc_wildcard$0 (arg) {
-  if (arg === "1.js") return __webpack_require__(1);
-  else if (arg === "2.js") return __webpack_require__(2);
-  else if (arg === "3.js") return __webpack_require__(3);
+  if (arg === "1.js" || arg === "1") return __webpack_require__(1);
+  else if (arg === "2.js" || arg === "2") return __webpack_require__(2);
+  else if (arg === "3.js" || arg === "3") return __webpack_require__(3);
 }
 const num = Math.ceil(Math.random() * 3, 0);
 
