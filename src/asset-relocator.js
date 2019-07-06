@@ -388,6 +388,7 @@ module.exports = async function (content, map) {
       }
       else {
         assetState.assetPermissions[assetBase(options.outputAssetBase) + name] = stats.mode;
+        this.addDependency(assetPath);
         this.emitFile(assetBase(options.outputAssetBase) + name, source);
       }
     });
@@ -436,6 +437,7 @@ module.exports = async function (content, map) {
         }
         else {
           assetState.assetPermissions[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = stats.mode;
+          this.addDependency(file);
           this.emitFile(assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length), source);
         }
       }));
