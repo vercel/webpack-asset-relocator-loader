@@ -80,6 +80,7 @@ module.exports =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/ 	__webpack_require__.ab = __dirname + "/";
+/******/ 	__webpack_require__.ac = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -97,7 +98,7 @@ console.log(fs.readFileSync(__webpack_require__.ab + "asset.txt", 'utf8'));
 
 (function () {
   var join = () => 'nope';
-  console.log(fs.readFileSync(join(__webpack_require__.ab + "asset-fs-inline-path-shadow", 'asset.txt'), 'utf8'));
+  console.log(fs.readFileSync(join(__webpack_require__.ac, 'asset.txt'), 'utf8'));
 })();
 
 /***/ }),

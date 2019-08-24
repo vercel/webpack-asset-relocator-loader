@@ -6,15 +6,17 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "ncc build src/asset-relocator.js",
+    "watch": "ncc build src/asset-relocator.js --watch",
     "codecov": "codecov",
     "test": "npm run build && jest",
+    "t": "npm run build && node --inspect-brk node_modules/.bin/jest --runInBand",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
     "dist/*"
   ],
   "devDependencies": {
-    "@zeit/ncc": "^0.17.0",
+    "@zeit/ncc": "^0.20.4",
     "acorn": "^6.1.1",
     "acorn-stage3": "^2.0.0",
     "bindings": "^1.4.0",

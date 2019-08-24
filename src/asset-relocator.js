@@ -16,7 +16,6 @@ const handleSpecialCases = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
 const stage3 = require('acorn-stage3');
-const mergeSourceMaps = require('./utils/merge-source-maps');
 acorn = acorn.Parser.extend(stage3);
 const os = require('os');
 
@@ -152,6 +151,17 @@ const fsSymbols = {
   stat: FS_FN,
   statSync: FS_FN
 };
+const fsWriteSymbols = {
+  appendFile: FS_FN,
+  appendFileSync: FS_FN,
+  copyFile: FS_FN,
+  copyFileSync: FS_FN,
+  write: FS_FN,
+  mkdir: FS_FN,
+  mkdirSync: FS_FN,
+  writeFile: FS_FN,
+  writeFileSync: FS_FN
+};
 const staticModules = Object.assign(Object.create(null), {
   bindings: {
     default: BINDINGS
@@ -280,7 +290,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 }
 
 const hooked = new WeakSet();
-function injectPathHook (compilation, outputAssetBase) {
+function injectPathHook (compilation, outputAssetBase, writeMode) {
   const { mainTemplate } = compilation;
   if (!hooked.has(mainTemplate)) {
     hooked.add(mainTemplate);
@@ -292,7 +302,25 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+
+      let relativeBase = ''
+      if(writeMode) {
+        for (let [_, value] of chunk._modules.entries()) {
+          if(value.rawRequest) {
+            // Gets relative path from source to output so it can be used for output operations
+            const outPath = mainTemplate.outputOptions.path === '/' ? value.context : mainTemplate.outputOptions.path
+            const outDir = path.dirname(path.join(outPath, chunk.name))
+            let relativePath
+            relativePath = path.relative(outDir, path.dirname(value.rawRequest))
+            if (relativePath.length)
+              relativePath = '/' + relativePath;
+  
+            // Used for replacing __dirname
+            relativeBase = `\n${mainTemplate.requireFn}.ac = __dirname${relativePath !== '' ? `+ ${JSON.stringify(relativePath)}` : ''};`
+          }
+        }
+      }
+      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};${relativeBase}`;
     });
   }
 }
@@ -307,7 +335,7 @@ module.exports = async function (content, map) {
   // injection to set __webpack_require__.ab
   const options = getOptions(this);
 
-  injectPathHook(this._compilation, options.outputAssetBase);
+  injectPathHook(this._compilation, options.outputAssetBase, options.writeMode);
 
   if (id.endsWith('.node')) {
     const assetState = getAssetState(options, this._compilation);
@@ -578,6 +606,9 @@ module.exports = async function (content, map) {
     const result = evaluate(expr, vars, computeBranches);
     return result;
   }
+  
+  // Turns on write mode during static parsing
+  let writeMode = false;
 
   // statically determinable leaves are tracked, and inlined when the
   // greatest parent statically known leaf computation corresponds to an asset path
@@ -617,7 +648,11 @@ module.exports = async function (content, map) {
         return backtrack(this, parent);
 
       if (node.type === 'Identifier') {
-        if (isIdentifierRead(node, parent)) {
+        // Replace in write mode all __dirname with actual src __dirname
+        if(options.writeMode && node.name === '__dirname') {
+          magicString.overwrite(node.start, node.end, '__webpack_require__.ac');
+          transformed = true;
+        } else if (isIdentifierRead(node, parent)) {
           let binding;
           // detect asset leaf expression triggers (if not already)
           // __dirname,  __filename
@@ -804,7 +839,10 @@ module.exports = async function (content, map) {
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
-          staticChildValue = computePureStaticValue(node, true).result;
+          if(options.writeMode && parent && parent.callee && parent.callee.property && fsWriteSymbols[parent.callee.property.name]) {
+            writeMode = true;
+          }
+          staticChildValue = computePureStaticValue(node, true, writeMode).result;
           // if it computes, then we start backtrackingelse 
           if (staticChildValue) {
             staticChildNode = node;
@@ -1167,7 +1205,16 @@ module.exports = async function (content, map) {
   }
 
   function emitStaticChildAsset (wrapRequire = false) {
-    if (isAbsolutePathStr(staticChildValue.value)) {
+    if(options.writeMode && writeMode) {
+      const dirname = path.resolve(id, '..');
+      const replaceRegex = new RegExp(dirname + '/');
+      
+      const restOfPath = staticChildValue.value.replace(replaceRegex, '');
+      const inlineString = `path.resolve(__webpack_require__.ac, '${restOfPath}')`;
+
+      magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+      transformed = true;
+    } else if (isAbsolutePathStr(staticChildValue.value)) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
       catch (e) {}
@@ -1206,6 +1253,7 @@ module.exports = async function (content, map) {
       }
     }
     staticChildNode = staticChildValue = undefined;
+    writeMode = false;
   }
 };
 

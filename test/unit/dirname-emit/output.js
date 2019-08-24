@@ -80,6 +80,7 @@ module.exports =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/ 	__webpack_require__.ab = __dirname + "/";
+/******/ 	__webpack_require__.ac = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -91,7 +92,7 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 const fs = __webpack_require__(1);
-console.log(fs.readdirSync(__webpack_require__.ab + "dirname-emit"));
+console.log(fs.readdirSync(__webpack_require__.ac));
 
 
 /***/ }),
