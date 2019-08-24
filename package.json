@@ -9,7 +9,6 @@
     "watch": "ncc build src/asset-relocator.js --watch",
     "codecov": "codecov",
     "test": "npm run build && jest",
-    "t": "npm run build && node --inspect-brk node_modules/.bin/jest --runInBand",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
