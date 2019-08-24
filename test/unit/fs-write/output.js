@@ -80,6 +80,7 @@ module.exports =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/ 	__webpack_require__.ab = __dirname + "/";
+/******/ 	__webpack_require__.ac = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -90,7 +91,7 @@ module.exports =
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(__dirname) {const fs = __webpack_require__(1)
+const fs = __webpack_require__(1)
 const path = __webpack_require__(2)
 
 
@@ -98,15 +99,14 @@ fs.writeFileSync('./test.js', 'Test')
 
 fs.writeFileSync('/tmp/test.js', 'Test')
 
-fs.writeFileSync(__dirname + 'test.js', 'Test')
+fs.writeFileSync(__webpack_require__.ac + 'test.js', 'Test')
 
-fs.writeFileSync(path.resolve(__dirname, 'test.js'), 'Test')
+fs.writeFileSync(path.resolve(__webpack_require__.ac, 'test.js'), 'Test')
 
 const _basePath = __webpack_require__.ab + "fs-write"
 const asset3 = 'asset3.txt';
 
 fs.writeFileSync(_basePath + '/' + asset3, 'Test');
-/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ }),
 /* 1 */
