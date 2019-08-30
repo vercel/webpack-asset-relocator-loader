@@ -290,7 +290,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 }
 
 const hooked = new WeakSet();
-function injectPathHook (compilation, outputAssetBase, writeMode) {
+function injectPathHook (compilation, outputAssetBase, relativeToSource) {
   const { mainTemplate } = compilation;
   if (!hooked.has(mainTemplate)) {
     hooked.add(mainTemplate);
@@ -304,7 +304,7 @@ function injectPathHook (compilation, outputAssetBase, writeMode) {
       }
 
       let relativeBase = ''
-      if(writeMode) {
+      if(relativeToSource) {
         for (let [_, value] of chunk._modules.entries()) {
           if(value.rawRequest) {
             // Gets relative path from source to output so it can be used for output operations
@@ -335,7 +335,7 @@ module.exports = async function (content, map) {
   // injection to set __webpack_require__.ab
   const options = getOptions(this);
 
-  injectPathHook(this._compilation, options.outputAssetBase, options.writeMode);
+  injectPathHook(this._compilation, options.outputAssetBase, options.relativeToSource);
 
   if (id.endsWith('.node')) {
     const assetState = getAssetState(options, this._compilation);
@@ -607,9 +607,6 @@ module.exports = async function (content, map) {
     return result;
   }
   
-  // Turns on write mode during static parsing
-  let writeMode = false;
-
   // statically determinable leaves are tracked, and inlined when the
   // greatest parent statically known leaf computation corresponds to an asset path
   let staticChildNode, staticChildValue;
@@ -648,10 +645,12 @@ module.exports = async function (content, map) {
         return backtrack(this, parent);
 
       if (node.type === 'Identifier') {
-        // Replace in write mode all __dirname with actual src __dirname
-        if(options.writeMode && node.name === '__dirname') {
-          magicString.overwrite(node.start, node.end, '__webpack_require__.ac');
-          transformed = true;
+        // Replace in relativeToSource all __dirname with actual source __dirname
+        if(options.relativeToSource && node.name === '__dirname') {
+          if(node.start && node.end) {
+            magicString.overwrite(node.start, node.end, '__webpack_require__.ac');
+            transformed = true;
+          }
         } else if (isIdentifierRead(node, parent)) {
           let binding;
           // detect asset leaf expression triggers (if not already)
@@ -839,10 +838,12 @@ module.exports = async function (content, map) {
         // if we have a direct pure static function,
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
+          // Skip static analysis for write operations -> to replace for example __dirname
+          // It's not possible analyze not existing files
           if(options.writeMode && parent && parent.callee && parent.callee.property && fsWriteSymbols[parent.callee.property.name]) {
-            writeMode = true;
+            return
           }
-          staticChildValue = computePureStaticValue(node, true, writeMode).result;
+          staticChildValue = computePureStaticValue(node, true).result;
           // if it computes, then we start backtrackingelse 
           if (staticChildValue) {
             staticChildNode = node;
@@ -1205,16 +1206,7 @@ module.exports = async function (content, map) {
   }
 
   function emitStaticChildAsset (wrapRequire = false) {
-    if(options.writeMode && writeMode) {
-      const dirname = path.resolve(id, '..');
-      const replaceRegex = new RegExp(dirname + '/');
-      
-      const restOfPath = staticChildValue.value.replace(replaceRegex, '');
-      const inlineString = `path.resolve(__webpack_require__.ac, '${restOfPath}')`;
-
-      magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
-      transformed = true;
-    } else if (isAbsolutePathStr(staticChildValue.value)) {
+    if (isAbsolutePathStr(staticChildValue.value)) {
       let resolved;
       try { resolved = path.resolve(staticChildValue.value); }
       catch (e) {}
@@ -1253,7 +1245,6 @@ module.exports = async function (content, map) {
       }
     }
     staticChildNode = staticChildValue = undefined;
-    writeMode = false;
   }
 };
 

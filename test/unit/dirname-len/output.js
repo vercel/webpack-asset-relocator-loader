@@ -80,7 +80,6 @@ module.exports =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/ 	__webpack_require__.ab = __dirname + "/";
-/******/ 	__webpack_require__.ac = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -89,13 +88,14 @@ module.exports =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-console.log(function (a, b) {
+/* WEBPACK VAR INJECTION */(function(__dirname) {console.log(function (a, b) {
   return b.filter(function (c) {
-    return __webpack_require__.ac.length;
+    return __dirname.length;
   });
 });
+/* WEBPACK VAR INJECTION */}.call(this, "/"))
 
 /***/ })
 /******/ ]);

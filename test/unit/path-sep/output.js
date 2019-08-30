@@ -80,7 +80,6 @@ module.exports =
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/ 	__webpack_require__.ab = __dirname + "/";
-/******/ 	__webpack_require__.ac = __dirname;
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -95,7 +94,7 @@ const { sep } = __webpack_require__(1);
 
 const X = sep;
 
-fs.readFileSync(__webpack_require__.ac + X + 'asset.txt');
+fs.readFileSync(__webpack_require__.ab + "asset.txt");
 
 /***/ }),
 /* 1 */
