@@ -316,7 +316,7 @@ function injectPathHook (compilation, outputAssetBase, relativeToSource) {
               relativePath = '/' + relativePath;
   
             // Used for replacing __dirname
-            relativeBase = `\n${mainTemplate.requireFn}.ac = __dirname${relativePath !== '' ? `+ ${JSON.stringify(relativePath)}` : ''};`
+            relativeBase = `\n__relativeToSource = __dirname${relativePath !== '' ? `+ ${JSON.stringify(relativePath)}` : ''};`
           }
         }
       }
@@ -642,13 +642,12 @@ module.exports = async function (content, map) {
       }
 
       if (staticChildNode)
-        return backtrack(this, parent);
-
-      if (node.type === 'Identifier') {
-        // Replace in relativeToSource all __dirname with actual source __dirname
-        if(options.relativeToSource && node.name === '__dirname') {
-          if(node.start && node.end) {
-            magicString.overwrite(node.start, node.end, '__webpack_require__.ac');
+        return backtrack(this, parent);  
+        if (node.type === 'Identifier') {
+          // Replace in relativeToSource all __dirname with actual source __dirname
+          if(options.relativeToSource && node.name === '__dirname') {
+            if(node.start && node.end) {
+            magicString.overwrite(node.start, node.end, '__relativeToSource');
             transformed = true;
           }
         } else if (isIdentifierRead(node, parent)) {
@@ -959,7 +958,15 @@ module.exports = async function (content, map) {
           if (computed && 'value' in computed) {
             // var known = ...;
             if (decl.id.type === 'Identifier') {
-              setKnownBinding(decl.id.name, computed.value);
+              // Replaces __dirname in relative to source mode
+              if(options.relativeToSource && decl.init.name === '__dirname') {
+                if(decl.init.start && decl.init.end) {
+                  magicString.overwrite(decl.init.start, decl.init.end, '__relativeToSource');
+                  transformed = true;
+                }
+              } else {
+                setKnownBinding(decl.id.name, computed.value);
+              }
             }
             // var { known } = ...;
             else if (decl.id.type === 'ObjectPattern') {
