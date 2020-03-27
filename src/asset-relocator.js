@@ -19,6 +19,7 @@ const stage3 = require('acorn-stage3');
 const mergeSourceMaps = require('./utils/merge-source-maps');
 acorn = acorn.Parser.extend(stage3);
 const os = require('os');
+const nodeGypBuild = require('node-gyp-build');
 
 const extensions = ['.js', '.json', '.node'];
 const { UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } = evaluate;
@@ -136,6 +137,7 @@ const NBIND_INIT = Symbol();
 const FS_FN = Symbol();
 const RESOLVE_FROM = Symbol();
 const BINDINGS = Symbol();
+const NODE_GYP_BUILD = Symbol();
 const fsSymbols = {
   access: FS_FN,
   accessSync: FS_FN,
@@ -184,6 +186,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
+  'node-gyp-build': {
+    default: NODE_GYP_BUILD
+  },
   'nbind': {
     init: NBIND_INIT,
     default: {
@@ -854,6 +859,23 @@ module.exports = async function (content, map) {
                     emitStaticChildAsset(staticBindingsInstance);
                     return backtrack(this, parent);
                   }
+                }
+              }
+            break;
+            case NODE_GYP_BUILD:
+              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
+                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
+                transformed = true;
+                let resolved;
+                try {
+                  resolved = nodeGypBuild.path(dir);
+                }
+                catch (e) {}
+                if (resolved) {
+                  staticChildValue = { value: resolved };
+                  staticChildNode = node;
+                  emitStaticChildAsset(path);
+                  return backtrack(this, parent);
                 }
               }
             break;
