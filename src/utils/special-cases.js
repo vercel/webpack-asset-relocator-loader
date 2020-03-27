@@ -120,7 +120,7 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
           statement.body.body[0].block.body[0].expression.right.arguments[0].property.name === 'i') {
         const arg = statement.body.body[0].block.body[0].expression.right.arguments[0];
         statement.body.body[0].block.body[0].expression.right.arguments = [{ type: 'Literal', value: '_' }];
-        const version = JSON.parse(fs.readFileSync(id.slice(0, -15) + 'package.json')).version;
+        const version = global._unit ? '3.0.0' : JSON.parse(fs.readFileSync(id.slice(0, -15) + 'package.json')).version;
         const useVersion = Number(version.slice(0, version.indexOf('.'))) >= 4;
         const binaryName = 'oracledb-' + (useVersion ? version : 'abi' + process.versions.modules) + '-' + process.platform + '-' + process.arch + '.node';
         magicString.overwrite(arg.start, arg.end, global._unit ? "'./oracledb.js'" : "'../build/Release/" + binaryName + "'");
