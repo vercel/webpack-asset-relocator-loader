@@ -96,6 +96,7 @@ function getAssetState (options, compilation) {
   return lastState = state;
 }
 
+const flattenArray = arr => Array.prototype.concat.apply([], arr);
 function getEntryIds (compilation) {
   if (compilation.options.entry) {
     if (typeof compilation.options.entry === 'string') {
@@ -108,7 +109,9 @@ function getEntryIds (compilation) {
     }
     else if (typeof compilation.options.entry === 'object') {
       try {
-        return Object.values(compilation.options.entry).map(entry => resolve.sync(entry, { extensions }));
+        return flattenArray(Object.values(compilation.options.entry)
+          .map(entry => typeof entry === "string" ? [entry] : flattenArray(Object.values(entry)))
+        ).map(entryString => resolve.sync(entryString, { extensions }));
       }
       catch (e) {
         return;
