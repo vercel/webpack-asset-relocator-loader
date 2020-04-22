@@ -306,7 +306,7 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+      return `${source}\n__webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
     });
   }
 }
