@@ -182,6 +182,83 @@ function handleWrappers (ast, scope, magicString) {
         }
       }
     }
+    // UMD wrapper
+    //    (function (factory) {
+    //      if (typeof module === "object" && typeof module.exports === "object") {
+    //         var v = factory(require, exports);
+    //         if (v !== undefined) module.exports = v;
+    //     }
+    //     else if (typeof define === "function" && define.amd) {
+    //         define(["require", "exports", "./impl/format", "./impl/edit", "./impl/scanner", "./impl/parser"], factory);
+    //     }
+    //   })(function (require, exports) {
+    //     // ...
+    //   }
+    // ->
+    //   (function (factory) {
+    //     if (typeof module === "object" && typeof module.exports === "object") {
+    //         var v = factory(require, exports);
+    //         if (v !== undefined) module.exports = v;
+    //     }
+    //     else if (typeof define === "function" && define.amd) {
+    //         define(["require", "exports", "./impl/format", "./impl/edit", "./impl/scanner", "./impl/parser"], factory);
+    //     }
+    //   })(function () {
+    //     // ...
+    //   }
+    else if (arg.type === 'FunctionExpression' &&
+        arg.params.length === 2 &&
+        arg.params[0].type === 'Identifier' &&
+        arg.params[1].type === 'Identifier' &&
+        ast.body[0].expression.callee.body.body.length === 1) {
+      const statement = ast.body[0].expression.callee.body.body[0];
+      if (statement.type === 'IfStatement' &&
+          statement.test.type === 'LogicalExpression' &&
+          statement.test.operator === '&&' &&
+          statement.test.left.type === 'BinaryExpression' &&
+          statement.test.left.left.type === 'UnaryExpression' &&
+          statement.test.left.left.operator === 'typeof' &&
+          statement.test.left.left.argument.type === 'Identifier' &&
+          statement.test.left.left.argument.name === 'module' &&
+          statement.test.left.right.type === 'Literal' &&
+          statement.test.left.right.value === 'object' &&
+          statement.test.right.type === 'BinaryExpression' &&
+          statement.test.right.left.type === 'UnaryExpression' &&
+          statement.test.right.left.operator === 'typeof' &&
+          statement.test.right.left.argument.type === 'MemberExpression' &&
+          statement.test.right.left.argument.object.type === 'Identifier' &&
+          statement.test.right.left.argument.object.name === 'module' &&
+          statement.test.right.left.argument.property.type === 'Identifier' &&
+          statement.test.right.left.argument.property.name === 'exports' &&
+          statement.test.right.right.type === 'Literal' &&
+          statement.test.right.right.value === 'object' &&
+          statement.consequent.type === 'BlockStatement' &&
+          statement.consequent.body.length > 0) {
+        let callSite;
+        if (statement.consequent.body[0].type === 'VariableDeclaration' &&
+            statement.consequent.body[0].declarations[0].init &&
+            statement.consequent.body[0].declarations[0].init.type === 'CallExpression')
+          callSite = statement.consequent.body[0].declarations[0].init;
+        else if (statement.consequent.body[0].type === 'ExpressionStatement' &&
+            statement.consequent.body[0].expression.type === 'CallExpression')
+          callSite = statement.consequent.body[0].expression;
+        else if (statement.consequent.body[0].type === 'ExpressionStatement' &&
+            statement.consequent.body[0].expression.type === 'AssignmentExpression' &&
+            statement.consequent.body[0].expression.right.type === 'CallExpression')
+          callSite = statement.consequent.body[0].expression.right;
+        if (callSite &&
+            callSite.callee.type === 'Identifier' &&
+            callSite.callee.name === ast.body[0].expression.callee.params[0].name &&
+            callSite.arguments.length === 2 &&
+            callSite.arguments[0].type === 'Identifier' &&
+            callSite.arguments[0].name === 'require' &&
+            callSite.arguments[1].type === 'Identifier' &&
+            callSite.arguments[1].name === 'exports') {
+          magicString.remove(ast.body[0].expression.arguments[0].params[0].start, ast.body[0].expression.arguments[0].params[ast.body[0].expression.arguments[0].params.length - 1].end);
+          transformed = true;
+        }
+      }
+    }
   }
   return { ast, scope, transformed };
 }
