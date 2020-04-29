@@ -15,11 +15,17 @@ const { pregyp, nbind } = require('./utils/binary-locators');
 const handleSpecialCases = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
 const resolve = require('resolve');
-const stage3 = require('acorn-stage3');
 const mergeSourceMaps = require('./utils/merge-source-maps');
-acorn = acorn.Parser.extend(stage3);
 const os = require('os');
 const nodeGypBuild = require('node-gyp-build');
+
+acorn = acorn.Parser.extend(
+  require("acorn-class-fields"),
+  require("acorn-export-ns-from"),
+  require("acorn-import-meta"),
+  require("acorn-numeric-separator"),
+  require("acorn-static-class-features"),
+);
 
 const extensions = ['.js', '.json', '.node'];
 const { UNKNOWN, FUNCTION, WILDCARD, wildcardRegEx } = evaluate;
@@ -482,13 +488,13 @@ module.exports = async function (content, map) {
 
   let ast, isESM;
   try {
-    ast = acorn.parse(code, { allowReturnOutsideFunction: true });
+    ast = acorn.parse(code, { allowReturnOutsideFunction: true, ecmaVersion: 2020 });
     isESM = false;
   }
   catch (e) {}
   if (!ast) {
     try {
-      ast = acorn.parse(code, { sourceType: 'module' });
+      ast = acorn.parse(code, { sourceType: 'module', ecmaVersion: 2020 });
       isESM = true;
     }
     catch (e) {
