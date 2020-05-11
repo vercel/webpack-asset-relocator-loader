@@ -110,7 +110,17 @@ function getEntryIds (compilation) {
     else if (typeof compilation.options.entry === 'object') {
       try {
         return flattenArray(Object.values(compilation.options.entry)
-          .map(entry => typeof entry === "string" ? [entry] : flattenArray(Object.values(entry)))
+          .map(entry => {
+            if (typeof entry === "string") {
+              return [entry];
+            }
+
+            if (entry && Array.isArray(entry.import)) {
+              return entry.import;
+            }
+            
+            return [];
+          })
         ).map(entryString => resolve.sync(entryString, { extensions }));
       }
       catch (e) {
