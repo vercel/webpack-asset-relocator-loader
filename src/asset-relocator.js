@@ -96,6 +96,7 @@ function getAssetState (options, compilation) {
   return lastState = state;
 }
 
+const flattenArray = arr => Array.prototype.concat.apply([], arr);
 function getEntryIds (compilation) {
   if (compilation.options.entry) {
     if (typeof compilation.options.entry === 'string') {
@@ -108,7 +109,19 @@ function getEntryIds (compilation) {
     }
     else if (typeof compilation.options.entry === 'object') {
       try {
-        return Object.values(compilation.options.entry).map(entry => resolve.sync(entry, { extensions }));
+        return flattenArray(Object.values(compilation.options.entry)
+          .map(entry => {
+            if (typeof entry === "string") {
+              return [entry];
+            }
+
+            if (entry && Array.isArray(entry.import)) {
+              return entry.import;
+            }
+            
+            return [];
+          })
+        ).map(entryString => resolve.sync(entryString, { extensions }));
       }
       catch (e) {
         return;
@@ -303,7 +316,7 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\n${mainTemplate.requireFn}.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+      return `${source}\n__webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
     });
   }
 }
