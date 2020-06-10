@@ -1,7 +1,7 @@
 # Asset Relocator Loader for Webpack
 
-[![Build Status](https://circleci.com/gh/zeit/webpack-asset-relocator-loader.svg?&style=shield)](https://circleci.com/gh/zeit/workflows/webpack-asset-relocator-loader)
-[![codecov](https://codecov.io/gh/zeit/webpack-asset-relocator-loader/branch/master/graph/badge.svg)](https://codecov.io/gh/zeit/webpack-asset-relocator-loader)
+[![Build Status](https://circleci.com/gh/vercel/webpack-asset-relocator-loader.svg?&style=shield)](https://circleci.com/gh/vercel/workflows/webpack-asset-relocator-loader)
+[![codecov](https://codecov.io/gh/vercel/webpack-asset-relocator-loader/branch/master/graph/badge.svg)](https://codecov.io/gh/vercel/webpack-asset-relocator-loader)
 
 Asset relocation loader used in ncc for performing Node.js builds while emitting and relocating any asset references.
 
