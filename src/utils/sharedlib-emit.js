@@ -40,7 +40,7 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile, debug
       assetState.assetPermissions[file.substr(pkgPath.length)] = stats.mode;
       if (debugLog)
         console.log('Emitting ' + file + ' for shared library support in ' + pkgPath);
-      emitFile(assetBase + file.substr(pkgPath.length), source);
+      emitFile(assetBase + file.substr(pkgPath.length + 1), source);
     }
   }));
 };

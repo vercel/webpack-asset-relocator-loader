@@ -338,7 +338,9 @@ module.exports = async function (content, map) {
     const pkgBase = getPackageBase(this.resourcePath) || dir;
     await sharedlibEmit(pkgBase, assetState, assetBase(options.outputAssetBase), this.emitFile);
 
-    const name = getUniqueAssetName(id.substr(pkgBase.length + 1), id, assetState.assetNames);
+    let name;
+    if (!(name = assetState.assets[id]))
+      name = assetState.assets[id] = getUniqueAssetName(id.substr(pkgBase.length + 1).replace(/\\/g, '/'), id, assetState.assetNames);
     
     const permissions = await new Promise((resolve, reject) => 
       stat(id, (err, stats) => err ? reject(err) : resolve(stats.mode))
@@ -378,7 +380,7 @@ module.exports = async function (content, map) {
     if (assetPath.endsWith('.node')) {
       // retain directory depth structure for binaries for rpath to work out
       if (pkgBase)
-        outName = assetPath.substr(pkgBase.length).replace(/\\/g, '/');
+        outName = assetPath.substr(pkgBase.length + 1).replace(/\\/g, '/');
       // If the asset is a ".node" binary, then glob for possible shared
       // libraries that should also be included
       const nextPromise = sharedlibEmit(pkgBase, assetState, assetBase(options.outputAssetBase), this.emitFile);
@@ -1274,7 +1276,8 @@ module.exports.initAssetCache = module.exports.initAssetPermissionsCache = funct
     hadOptions: false
   };
   stateMap.set(compilation, state);
-  compilation.cache.get('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, (err, _assetState) => {
+  const cache = compilation.getCache ? compilation.getCache() : compilation.cache;
+  cache.get('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, (err, _assetState) => {
     if (err) console.error(err);
     if (_assetState) {
       const parsedState = JSON.parse(_assetState);
@@ -1285,7 +1288,8 @@ module.exports.initAssetCache = module.exports.initAssetPermissionsCache = funct
     }
   });
   compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
-    compilation.cache.store('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, JSON.stringify({
+    const cache = compilation.getCache ? compilation.getCache() : compilation.cache;
+    cache.store('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, JSON.stringify({
       assetPermissions: state.assetPermissions,
       assetSymlinks: state.assetSymlinks
     }), (err) => {
