@@ -1,7 +1,7 @@
 {
   "name": "@zeit/webpack-asset-relocator-loader",
   "description": "Asset relocation loader used in ncc for performing Node.js builds while emitting and relocating any asset references.",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "repository": "zeit/webpack-asset-relocator-loader",
   "license": "MIT",
   "main": "./dist/index.js",
