@@ -66,13 +66,13 @@ Assets will be emitted using `emitAsset`, with their references updated in the c
 
 Asset symlinks and permissions are maintained in the loader, but aren't passed to Webpack as `emit` doesn't support these.
 
-This information can be obtained from the loader through the API calls `getAssetPermissions()` and `getSymlinks()`:
+This information can be obtained from the loader through the API calls `getAssetMeta()` and `getSymlinks()`:
 
 ```js
 const relocateLoader = require('webpack-asset-relocator-loader');
 
 webpack({...}).run((err, stats) => {
-  const assetPermissions = relocateLoader.getAssetPermissions();
+  const assetMeta = relocateLoader.getAssetMeta();
   const symlinks = relocateLoader.getSymlinks();
 });
 ```

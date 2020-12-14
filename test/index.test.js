@@ -7,6 +7,13 @@ jest.setTimeout(20000);
 
 global._unit = true;
 
+const relocateLoader = require(__dirname + (global.coverage ? "/../src/asset-relocator" : "/../"));
+const plugins = [{
+  apply(compiler) {
+    compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation));
+  }
+}];
+
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
     // simple error test
@@ -55,7 +62,8 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
             }
           }]
         }],
-      }
+      },
+      plugins
     });
     compiler.outputFileSystem = mfs;
   
@@ -99,8 +107,17 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
 
     // very simple asset validation in unit tests
     if (unitTest.startsWith("asset-")) {
-      const assets = mfs.readdirSync('/').filter(filename => filename !== '/index.js');
+      const assets = mfs.readdirSync('/').filter(filename => filename !== 'index.js');
       expect(Object.keys(assets).length).toBeGreaterThan(0);
+
+      // test asset permissions and paths
+      for (const asset of assets) {
+        if (asset.indexOf('.') === -1)
+          continue;
+        const assetMeta = relocateLoader.getAssetMeta(asset);
+        expect(assetMeta.permissions).toBeGreaterThan(0);
+        expect(typeof assetMeta.path).toBe('string');
+      }
     }
   });
 }
