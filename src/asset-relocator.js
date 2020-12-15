@@ -81,7 +81,7 @@ function getAssetState (options, compilation) {
       entryIds: getEntryIds(compilation),
       assets: Object.create(null),
       assetNames: Object.create(null),
-      assetPermissions: Object.create(null),
+      assetMeta: Object.create(null),
       hadOptions: false
     });
   }
@@ -345,7 +345,7 @@ module.exports = async function (content, map) {
     const permissions = await new Promise((resolve, reject) => 
       stat(id, (err, stats) => err ? reject(err) : resolve(stats.mode))
     );
-    assetState.assetPermissions[name] = permissions;
+    assetState.assetMeta[name] = { path: id, permissions };
     this.emitFile(assetBase(options.outputAssetBase) + name, content);
 
     this.callback(null, 'module.exports = __non_webpack_require__(__webpack_require__.ab + ' + JSON.stringify(name) + ')');
@@ -413,7 +413,7 @@ module.exports = async function (content, map) {
         assetState.assetSymlinks[assetBase(options.outputAssetBase) + name] = path.relative(baseDir, path.resolve(baseDir, symlink));
       }
       else {
-        assetState.assetPermissions[assetBase(options.outputAssetBase) + name] = stats.mode;
+        assetState.assetMeta[assetBase(options.outputAssetBase) + name] = { path: assetPath, permissions: stats.mode };
         this.addDependency(assetPath);
         this.emitFile(assetBase(options.outputAssetBase) + name, source);
       }
@@ -462,7 +462,7 @@ module.exports = async function (content, map) {
           assetState.assetSymlinks[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = path.relative(baseDir, path.resolve(baseDir, symlink)).replace(/\\/g, '/');
         }
         else {
-          assetState.assetPermissions[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = stats.mode;
+          assetState.assetMeta[assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length)] = { path: file, permissions: stats.mode };
           this.addDependency(file);
           this.emitFile(assetBase(options.outputAssetBase) + name + file.substr(assetDirPath.length), source);
         }
@@ -1253,16 +1253,16 @@ module.exports = async function (content, map) {
 };
 
 module.exports.raw = true;
-module.exports.getAssetPermissions = function(assetName) {
+module.exports.getAssetMeta = function(assetName) {
   if (lastState)
-    return lastState.assetPermissions[assetName];
+    return lastState.assetMeta[assetName];
 };
 module.exports.getSymlinks = function() {
   if (lastState)
     return lastState.assetSymlinks;
 };
 
-module.exports.initAssetCache = module.exports.initAssetPermissionsCache = function (compilation, outputAssetBase) {
+module.exports.initAssetCache = module.exports.initAssetMetaCache = function (compilation, outputAssetBase) {
   injectPathHook(compilation, outputAssetBase);
   const entryIds = getEntryIds(compilation);
   if (!entryIds)
@@ -1271,29 +1271,31 @@ module.exports.initAssetCache = module.exports.initAssetPermissionsCache = funct
     entryIds: entryIds,
     assets: Object.create(null),
     assetNames: Object.create(null),
-    assetPermissions: Object.create(null),
+    assetMeta: Object.create(null),
     assetSymlinks: Object.create(null),
     hadOptions: false
   };
   stateMap.set(compilation, state);
   const cache = compilation.getCache ? compilation.getCache() : compilation.cache;
-  cache.get('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, (err, _assetState) => {
-    if (err) console.error(err);
-    if (_assetState) {
-      const parsedState = JSON.parse(_assetState);
-      if (parsedState.assetPermissions)
-        state.assetPermissions = parsedState.assetPermissions;
-      if (parsedState.assetSymlinks)
-        state.assetSymlinks = parsedState.assetSymlinks;
-    }
-  });
+  if (cache)
+    cache.get('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, (err, _assetState) => {
+      if (err) console.error(err);
+      if (_assetState) {
+        const parsedState = JSON.parse(_assetState);
+        if (parsedState.assetMeta)
+          state.assetMeta = parsedState.assetMeta;
+        if (parsedState.assetSymlinks)
+          state.assetSymlinks = parsedState.assetSymlinks;
+      }
+    });
   compilation.compiler.hooks.afterCompile.tap("relocate-loader", compilation => {
     const cache = compilation.getCache ? compilation.getCache() : compilation.cache;
-    cache.store('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, JSON.stringify({
-      assetPermissions: state.assetPermissions,
-      assetSymlinks: state.assetSymlinks
-    }), (err) => {
-      if (err) console.error(err);
-    });
+    if (cache)
+      cache.store('/RelocateLoader/AssetState/' + JSON.stringify(entryIds), null, JSON.stringify({
+        assetMeta: state.assetMeta,
+        assetSymlinks: state.assetSymlinks
+      }), (err) => {
+        if (err) console.error(err);
+      });
   });
 };
