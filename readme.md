@@ -9,7 +9,7 @@ Asset relocation loader used in ncc for performing Node.js builds while emitting
 
 ### Installation
 ```bash
-npm i -g @zeit/webpack-asset-relocator-loader
+npm i -g @vercel/webpack-asset-relocator-loader
 ```
 
 ### Usage
@@ -32,7 +32,7 @@ Any `.node` files included will also support binary relocation.
         // it is recommended for Node builds to turn off AMD support
         parser: { amd: false },
         use: {
-          loader: '@zeit/webpack-asset-relocator-loader',
+          loader: '@vercel/webpack-asset-relocator-loader',
           options: {
             // optional, base folder for asset emission (eg assets/name.ext)
             outputAssetBase: 'assets',
