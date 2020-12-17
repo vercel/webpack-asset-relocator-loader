@@ -434,15 +434,8 @@ module.exports = async function (content, map) {
       console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath).split(path.sep)[0];
 
-    console.log(Object.keys(assetState.assets));
-    console.log(Object.keys(assetState.assetNames));
-
     const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames, true));
     assetState.assets[assetDirPath] = name;
-
-    console.log(name + ' -> ' + assetDirPath);
-
-    
 
     // this used to be async but had to switch to support no emission for no detection
     const files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }).filter(name => 
