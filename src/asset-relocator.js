@@ -1253,12 +1253,12 @@ module.exports = async function (content, map) {
 };
 
 module.exports.raw = true;
-module.exports.getAssetMeta = function(assetName, compilation) {
+module.exports.getAssetMeta = function (assetName, compilation) {
   const state = compilation ? stateMap.get(compilation) : lastState;
   if (state)
     return state.assetMeta[assetName];
 };
-module.exports.getSymlinks = function(compilation) {
+module.exports.getSymlinks = function (compilation) {
   const state = compilation ? stateMap.get(compilation) : lastState;
   if (state)
     return lastState.assetSymlinks;
