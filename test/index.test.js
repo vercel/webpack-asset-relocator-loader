@@ -114,7 +114,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
       for (const asset of assets) {
         if (asset.indexOf('.') === -1)
           continue;
-        const assetMeta = relocateLoader.getAssetMeta(asset);
+        const assetMeta = relocateLoader.getAssetMeta(asset, compiler.compilation);
         expect(assetMeta.permissions).toBeGreaterThan(0);
         expect(typeof assetMeta.path).toBe('string');
       }
