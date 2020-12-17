@@ -74,10 +74,12 @@ function isLoop (node) {
 const stateMap = new Map();
 let lastState;
 
+let stateId = 0;
 function getAssetState (options, compilation) {
   let state = stateMap.get(compilation);
   if (!state) {
     stateMap.set(compilation, state = {
+      stateId: ++stateId,
       entryIds: getEntryIds(compilation),
       assets: Object.create(null),
       assetNames: Object.create(null),
@@ -431,7 +433,8 @@ module.exports = async function (content, map) {
     if (options.debugLog)
       console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
     const dirName = path.basename(assetDirPath);
-    const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames));
+
+    const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames, true));
     assetState.assets[assetDirPath] = name;
 
     // this used to be async but had to switch to support no emission for no detection
