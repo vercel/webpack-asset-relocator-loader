@@ -2,7 +2,7 @@ version: 2
 jobs:
   test-macos:
     macos:
-      xcode: "9.3.0"
+      xcode: "12.2.0"
     working_directory: ~/macos-repo
     steps:
       - checkout
