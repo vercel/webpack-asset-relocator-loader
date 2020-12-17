@@ -432,7 +432,7 @@ module.exports = async function (content, map) {
     }) || '/**/*';
     if (options.debugLog)
       console.log('Emitting directory ' + assetDirPath + wildcardPattern + ' for static use in module ' + id);
-    const dirName = path.basename(assetDirPath).split(path.sep)[0];
+    const dirName = path.basename(assetDirPath);
 
     const name = assetState.assets[assetDirPath] || (assetState.assets[assetDirPath] = getUniqueAssetName(dirName, assetDirPath, assetState.assetNames, true));
     assetState.assets[assetDirPath] = name;
