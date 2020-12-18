@@ -1251,6 +1251,29 @@ module.exports = async function (content, map) {
         }
       }
     }
+    else if (staticChildNode.type === 'ArrayExpression' && staticChildValue.value instanceof Array) {
+      for (let i = 0; i < staticChildValue.value.length; i++) {
+        const value = staticChildValue.value[i];
+        const el = staticChildNode.elements[i];
+        if (isAbsolutePathStr(value)) {
+          let resolved;
+          try { resolved = path.resolve(value); }
+          catch (e) {}
+          let emitAsset;
+          if (emitAsset = validAssetEmission(resolved)) {
+            let inlineString = emitAsset(resolved);
+            if (inlineString) {
+              // require('bindings')(...)
+              // -> require(require('bindings')(...))
+              if (wrapRequire)
+                inlineString = '__non_webpack_require__(' + inlineString + ')';
+              magicString.overwrite(el.start, el.end, inlineString);
+              transformed = true;
+            }
+          }
+        }
+      }
+    }
     staticChildNode = staticChildValue = undefined;
   }
 };
