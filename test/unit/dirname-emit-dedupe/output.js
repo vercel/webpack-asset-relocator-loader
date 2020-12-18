@@ -91,8 +91,9 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 const fs = __webpack_require__(1);
-console.log(fs.readdirSync(__webpack_require__.ab + "asset1.txt"));
-console.log(fs.readdirSync(getDirAsset('asset2')));
+console.log(fs.readFileSync(__webpack_require__.ab + "asset1.txt"));
+console.log(fs.readFileSync(getDirAsset('asset2.txt')));
+console.log(fs.readdirSync(__webpack_require__.ab + "dir"));
 
 function getDirAsset (name) {
     return __webpack_require__.ab + "dir/" + name;
