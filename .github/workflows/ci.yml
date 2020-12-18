@@ -32,3 +32,9 @@ jobs:
       - name: Coverage
         if: matrix.os == 'ubuntu-latest'
         run: yarn test-coverage
+      - name: Release
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 12 && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: yarn semantic-release
