@@ -537,6 +537,9 @@ module.exports = async function (content, map) {
     process: {
       shadowDepth: 0,
       value: staticProcess
+    },
+    __webpack_require__: {
+      shadowDepth: 0
     }
   });
 
@@ -658,16 +661,24 @@ module.exports = async function (content, map) {
             return this.skip();
           }
           // free require -> __non_webpack_require__
-          else if (!isESM && node.name === 'require' && knownBindings.require.shadowDepth === 0 && parent.type !== 'UnaryExpression') {
-            magicString.overwrite(node.start, node.end, '__non_webpack_require__');
-            transformed = true;
-            return this.skip();
-          }
-          // __non_webpack_require__ -> eval('require')
-          else if (!isESM && node.name === '__non_webpack_require__' && parent.type !== 'UnaryExpression') {
-            magicString.overwrite(node.start, node.end, 'eval("require")');
-            transformed = true;
-            return this.skip();
+          else if (!isESM && parent.type !== 'UnaryExpression') {
+            if (node.name === 'require' && knownBindings.require.shadowDepth === 0) {
+              magicString.overwrite(node.start, node.end, '__non_webpack_require__');
+              transformed = true;
+              return this.skip();
+            }
+            // __non_webpack_require__ -> eval('require')
+            else if (node.name === '__non_webpack_require__') {
+              magicString.overwrite(node.start, node.end, 'eval("require")');
+              transformed = true;
+              return this.skip();
+            }
+            // __webpack_require__ -> __webpack_require__N
+            else if (node.name.startsWith('__webpack_require__')) {
+              magicString.overwrite(node.start, node.end, '__webpack_require__' + (knownBindings['__webpack_require__'].shadowDepth + 1) + node.name.slice(19));
+              transformed = true;
+              return this.skip();
+            }
           }
         }
       }
