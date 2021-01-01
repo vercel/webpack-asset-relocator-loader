@@ -773,6 +773,15 @@ module.exports = async function (content, map) {
           return this.skip();
         }
         else {
+          // if there is a custom emit and we have a string, then allow the custom emit to handle it
+          if (typeof computed.value === 'string' && options.customEmit) {
+            const customEmit = options.customEmit(computed.value, id);
+            if (customEmit) {
+              magicString.overwrite(node.start, node.end, '__non_webpack_require__(' + customEmit + ')');
+              transformed = true;
+              return this.skip();
+            }
+          }
           // leave it to webpack
           return this.skip();
         }
@@ -1193,10 +1202,10 @@ module.exports = async function (content, map) {
     }
     // finally, use custom emit filter
     if (options.customEmit) {
-      const customEmit = options.customEmit(assetPath);
+      const customEmit = options.customEmit(assetPath, id);
       if (customEmit === false)
         return;
-      if (typeof customEmit === 'string' || customEmit instanceof Promise)
+      if (typeof customEmit === 'string')
         return () => customEmit;
     }
     return assetEmission(assetPath);
