@@ -1192,7 +1192,7 @@ module.exports = async function (content, map) {
       return;
     }
     // finally, use custom emit filter
-    else if (options.customEmit) {
+    if (options.customEmit) {
       const customEmit = options.customEmit(assetPath);
       if (customEmit === false)
         return;
