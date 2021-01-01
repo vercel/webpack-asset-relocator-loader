@@ -1191,6 +1191,14 @@ module.exports = async function (content, map) {
       }
       return;
     }
+    // finally, use custom emit filter
+    else if (options.customEmit) {
+      const customEmit = options.customEmit(assetPath);
+      if (customEmit === false)
+        return;
+      if (typeof customEmit === 'string' || customEmit instanceof Promise)
+        return () => customEmit;
+    }
     return assetEmission(assetPath);
   }
   function assetEmission (assetPath) {
