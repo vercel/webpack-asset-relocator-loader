@@ -91,7 +91,7 @@ module.exports =
 /***/ (function(module, exports, __webpack_require__) {
 
 const fs = __webpack_require__(1);
-console.log(eval("./test.js"));
+console.log(require("./test.js"));
 
 
 
