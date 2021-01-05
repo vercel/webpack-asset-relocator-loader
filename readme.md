@@ -47,7 +47,7 @@ Any `.node` files included will also support binary relocation.
             // optional, custom functional asset emitter
             // takes an asset path and returns the replacement
             // or returns false to skip emission
-            customEmit: (path, id, isRequire) => false | '"./custom-replacement"',
+            customEmit: (path, { id, isRequire }) => false | '"./custom-replacement"',
             // optional, a list of asset names already emitted or
             // defined that should not be emitted
             existingAssetNames: [],
