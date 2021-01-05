@@ -420,7 +420,7 @@ module.exports = async function (content, map) {
         this.emitFile(assetBase(options.outputAssetBase) + name, source);
       }
     });
-    return "__webpack_require__.ab + " + JSON.stringify(name);
+    return "__webpack_require__.ab + " + JSON.stringify(name).replace(/\\/g, '/');
   };
   const emitAssetDirectory = (wildcardPath, wildcards) => {
     const wildcardIndex = wildcardPath.indexOf(WILDCARD);
@@ -486,7 +486,7 @@ module.exports = async function (content, map) {
           first = false;
         }
         else {
-          assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).slice(1, -1) + "'";
+          assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).replace.slice(1, -1) + "'";
         }
         if (wildcard.type === 'SpreadElement')
           assetExpressions += " + " + code.substring(wildcard.argument.start, wildcard.argument.end) + ".join('/')";
@@ -494,10 +494,10 @@ module.exports = async function (content, map) {
           assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
       }
       if (curPattern.length) {
-        assetExpressions += " + \'" + JSON.stringify(curPattern).slice(1, -1) + "'";
+        assetExpressions += " + \'" + JSON.stringify(curPattern).replace(/\\/g, '/').slice(1, -1) + "'";
       }
     }
-    return "__webpack_require__.ab + " + JSON.stringify(name + firstPrefix) + assetExpressions;
+    return "__webpack_require__.ab + " + JSON.stringify((name + firstPrefix).replace(/\\/g, '/')) + assetExpressions;
   };
 
   let assetEmissionPromises = Promise.resolve();
@@ -773,6 +773,15 @@ module.exports = async function (content, map) {
           return this.skip();
         }
         else {
+          // if there is a custom emit and we have a string, then allow the custom emit to handle it
+          if (typeof computed.value === 'string' && options.customEmit) {
+            const customEmit = options.customEmit(computed.value, { id, isRequire: true });
+            if (customEmit) {
+              magicString.overwrite(node.start, node.end, '__non_webpack_require__(' + customEmit + ')');
+              transformed = true;
+              return this.skip();
+            }
+          }
           // leave it to webpack
           return this.skip();
         }
@@ -1190,6 +1199,14 @@ module.exports = async function (content, map) {
           console.log('Skipping asset emission of ' + assetPath.replace(wildcardRegEx, '*') + ' for ' + id + ' as it is outside the filterAssetBase directory ' + (options.filterAssetBase || cwd));
       }
       return;
+    }
+    // finally, use custom emit filter
+    if (options.customEmit) {
+      const customEmit = options.customEmit(assetPath, { id, isRequire: false });
+      if (customEmit === false)
+        return;
+      if (typeof customEmit === 'string')
+        return () => customEmit;
     }
     return assetEmission(assetPath);
   }
