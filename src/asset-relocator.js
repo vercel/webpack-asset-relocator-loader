@@ -486,7 +486,7 @@ module.exports = async function (content, map) {
           first = false;
         }
         else {
-          assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).replace.slice(1, -1) + "'";
+          assetExpressions += " + \'" + JSON.stringify(wildcardPrefix).slice(1, -1) + "'";
         }
         if (wildcard.type === 'SpreadElement')
           assetExpressions += " + " + code.substring(wildcard.argument.start, wildcard.argument.end) + ".join('/')";
