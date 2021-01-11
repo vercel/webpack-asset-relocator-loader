@@ -710,15 +710,11 @@ module.exports = async function (content, map) {
           }
           else if (computed.value) {
             let inline;
-            if (options.customEmit) {
+            if (options.customEmit)
               inline = options.customEmit(computed.value, true);
-              if (inline === undefined)
-                inline = JSON.stringify(computed.value);
-            }
-            else {
-              inline = computed.value;
-            }
-            if (inline) {
+            if (inline === undefined)
+              inline = JSON.stringify(computed.value);
+            if (inline !== false) {
               magicString.overwrite(expression.start, expression.end, inline);
               transformed = true;
               return this.skip();
