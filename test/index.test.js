@@ -55,6 +55,8 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
               existingAssetNames: ['existing.txt'],
               filterAssetBase: path.resolve('test'),
               customEmit (path) {
+                if (path === '"./b.js"')
+                  return '"./a.js"';
                 if (path === './test.json')
                   return '"./test.js"';
                 if (path.indexOf('custom-emit') !== -1)

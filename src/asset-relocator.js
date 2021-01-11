@@ -709,9 +709,20 @@ module.exports = async function (content, map) {
             }
           }
           else if (computed.value) {
-            magicString.overwrite(expression.start, expression.end, JSON.stringify(computed.value));
-            transformed = true;
-            return this.skip();
+            let inline;
+            if (options.customEmit) {
+              inline = options.customEmit(computed.value, true);
+              if (inline === undefined)
+                inline = JSON.stringify(computed.value);
+            }
+            else {
+              inline = computed.value;
+            }
+            if (inline) {
+              magicString.overwrite(expression.start, expression.end, inline);
+              transformed = true;
+              return this.skip();
+            }
           }
         }
         // branched require, and it used a binding from our analysis
