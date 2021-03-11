@@ -318,7 +318,7 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\n__webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
     });
   }
 }
