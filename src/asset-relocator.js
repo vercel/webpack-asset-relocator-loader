@@ -207,6 +207,9 @@ const staticModules = Object.assign(Object.create(null), {
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
+  '@mapbox/node-pre-gyp': pregyp,
+  '@mapbox/node-pre-gyp/lib/pre-binding': pregyp,
+  '@mapbox/node-pre-gyp/lib/pre-binding.js': pregyp,
   'node-gyp-build': {
     default: NODE_GYP_BUILD
   },
