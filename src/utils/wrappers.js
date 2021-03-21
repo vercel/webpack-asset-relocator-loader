@@ -1,5 +1,9 @@
 const { walk } = require('estree-walker');
 
+function isUndefinedOrVoid (node) {
+  return node.type === 'Identifier' && node.name === 'undefined' || node.type === 'UnaryExpression' && node.operator === 'void' && node.argument.type === 'Literal' && node.argument.value === 0;
+}
+
 // Wrapper detections for require extraction
 function handleWrappers (ast, scope, magicString) {
   let transformed = false;
@@ -123,9 +127,12 @@ function handleWrappers (ast, scope, magicString) {
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.type === 'CallExpression' &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.length &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.arguments.every(arg => arg.type === 'Literal' && typeof arg.value === 'number') &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
-        wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.arguments.length === 0 &&
+        (
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'FunctionExpression' ||
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'CallExpression' &&
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.type === 'FunctionExpression' &&
+          wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.arguments.length === 0
+        ) &&
         // (dont go deeper into browserify loader internals than this)
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments.length === 3 &&
         wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[0].type === 'ObjectExpression' &&
@@ -134,7 +141,7 @@ function handleWrappers (ast, scope, magicString) {
       const modules = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.arguments[0].properties;
 
       // replace the browserify wrapper require with __non_webpack_require__
-      const innerFn = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.body.body[0];
+      const innerFn = wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.type === 'FunctionExpression' ? wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee : wrapper.arguments[0].body.body[wrapper.arguments[0].body.body.length - 1].argument.callee.callee.callee.body.body[0];
       let innerBody;
       if (innerFn.type === 'FunctionDeclaration')
         innerBody = innerFn.body;
@@ -169,20 +176,22 @@ function handleWrappers (ast, scope, magicString) {
         const moduleMap = m.value.elements[1].properties;
         for (const prop of moduleMap) {
           if (prop.type !== 'Property' ||
-              (prop.value.type !== 'Identifier' && prop.value.type !== 'Literal') ||
-              prop.key.type !== 'Literal' ||
-              typeof prop.key.value !== 'string' ||
+              (prop.value.type !== 'Identifier' && prop.value.type !== 'Literal' && !isUndefinedOrVoid(prop.value)) ||
+              !(
+                prop.key.type === 'Literal' && typeof prop.key.value === 'string' ||
+                prop.key.type === 'Identifier'
+              ) ||
               prop.computed)
             return false;
-          if (prop.value.type === 'Identifier' && prop.value.name === 'undefined')
-            externals[prop.key.value] = true;
+          if (isUndefinedOrVoid(prop.value))
+            externals[prop.key.value || prop.key.name] = true;
         }
         return true;
       })) {
         // if we have externals, inline them into the browserify cache for webpack to pick up
         const externalIds = Object.keys(externals);
         if (externalIds.length) {
-          const cache = wrapper.arguments[0].body.body[1].argument.callee.arguments[1];
+          const cache = (wrapper.arguments[0].body.body[1] || wrapper.arguments[0].body.body[0]).argument.callee.arguments[1];
           const renderedExternals = externalIds.map(ext => `"${ext}": { exports: require("${ext}") }`).join(',\n  ');
           magicString.appendRight(cache.end - 1, renderedExternals);
           transformed = true;

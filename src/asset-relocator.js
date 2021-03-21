@@ -1037,7 +1037,7 @@ module.exports = async function (content, map) {
         if (!isESM && node.right.type === 'CallExpression' &&
             isStaticRequire(node.right.callee) &&
             node.right.callee.arguments[0].value === 'esm' &&
-            node.left.type === 'Identifier' && node.left.name === 'require') {
+            node.left.type === 'Identifier') {
           transformed = true;
           magicString.overwrite(node.start, node.end, '');
           return this.skip();
