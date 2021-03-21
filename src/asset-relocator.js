@@ -21,9 +21,6 @@ const nodeGypBuild = require('node-gyp-build');
 
 acorn = acorn.Parser.extend(
   require("acorn-class-fields"),
-  require("acorn-export-ns-from"),
-  require("acorn-import-meta"),
-  require("acorn-numeric-separator"),
   require("acorn-static-class-features"),
 );
 
