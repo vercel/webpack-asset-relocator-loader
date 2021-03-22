@@ -869,8 +869,63 @@ module.exports =
               "video/webm": ["webm"]
           }
       }, {}]
-  }, {}, [3])(3)
+  }, {"http": { exports: __webpack_require__(1) },
+  "https": { exports: __webpack_require__(2) },
+  "querystring": { exports: __webpack_require__(3) },
+  "url": { exports: __webpack_require__(4) },
+  "fs": { exports: __webpack_require__(5) },
+  "path": { exports: __webpack_require__(6) },
+  "util": { exports: __webpack_require__(7) },
+  "stream": { exports: __webpack_require__(8) }}, [3])(3)
 });
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports) {
+
+module.exports = require("http");
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+module.exports = require("https");
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+module.exports = require("querystring");
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+module.exports = require("url");
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+module.exports = require("path");
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+module.exports = require("util");
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+module.exports = require("stream");
 
 /***/ })
 /******/ ]);
