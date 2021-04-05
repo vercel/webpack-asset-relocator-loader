@@ -18,6 +18,7 @@ const resolve = require('resolve');
 const mergeSourceMaps = require('./utils/merge-source-maps');
 const os = require('os');
 const nodeGypBuild = require('node-gyp-build');
+const { pathToFileURL, fileURLToPath } = require('url');
 
 acorn = acorn.Parser.extend(
   require("acorn-class-fields"),
@@ -221,7 +222,8 @@ const staticModules = Object.assign(Object.create(null), {
   }
 });
 const globalBindings = {
-  MONGOOSE_DRIVER_PATH: undefined
+  MONGOOSE_DRIVER_PATH: undefined,
+  URL: URL
 };
 globalBindings.global = globalBindings.GLOBAL = globalBindings.globalThis = globalBindings;
 
@@ -259,8 +261,22 @@ function backtrack (self, parent) {
 }
 
 const absoluteRegEx = /^\/[^\/]+|^[a-z]:[\\/][^\\/]+/i;
-function isAbsolutePathStr (str) {
-  return typeof str === 'string' && str.match(absoluteRegEx);
+function isAbsolutePathOrUrl(str) {
+  if (str instanceof URL)
+    return str.protocol === 'file:';
+  if (typeof str === 'string') {
+    if (str.startsWith('file:')) {
+      try {
+        new URL(str);
+        return true;
+      }
+      catch {
+        return false;
+      }
+    }
+    return absoluteRegEx.test(str);
+  }
+  return false;
 }
 
 const BOUND_REQUIRE = Symbol();
@@ -525,6 +541,8 @@ module.exports = async function (content, map) {
 
   let transformed = false;
 
+  const importMetaUrl = pathToFileURL(id).href;
+
   const knownBindings = Object.assign(Object.create(null), {
     __dirname: {
       shadowDepth: 0,
@@ -603,6 +621,7 @@ module.exports = async function (content, map) {
     Object.keys(globalBindings).forEach(name => {
       vars[name] = globalBindings[name];
     });
+    vars['import.meta'] = { url: importMetaUrl };
     // evaluate returns undefined for non-statically-analyzable
     const result = evaluate(expr, vars, computeBranches);
     return result;
@@ -670,6 +689,11 @@ module.exports = async function (content, map) {
             return this.skip();
           }
         }
+      }
+      else if (node.type === 'MemberExpression' && node.object.type === 'MetaProperty' && node.object.meta.name === 'import' && node.object.property.name === 'meta' && (node.property.computed ? node.property.value : node.property.name) === 'url') {
+        staticChildValue = { value: importMetaUrl };
+        staticChildNode = node;
+        return this.skip();
       }
       // require
       else if (!isESM &&
@@ -997,7 +1021,7 @@ module.exports = async function (content, map) {
                 setKnownBinding(prop.value.name, computed.value[prop.key.name]);
               }
             }
-            if (isAbsolutePathStr(computed.value)) {
+            if (isAbsolutePathOrUrl(computed.value)) {
               staticChildValue = computed;
               staticChildNode = decl.init;
               emitStaticChildAsset();
@@ -1026,7 +1050,7 @@ module.exports = async function (content, map) {
               setKnownBinding(prop.value.name, computed.value[prop.key.name]);
             }
           }
-          if (isAbsolutePathStr(computed.value)) {
+          if (isAbsolutePathOrUrl(computed.value)) {
             staticChildValue = computed;
             staticChildNode = node.right;
             emitStaticChildAsset();
@@ -1236,10 +1260,14 @@ module.exports = async function (content, map) {
     }
   }
 
+  function resolveAbsolutePathOrUrl (value) {
+    return value instanceof URL ? fileURLToPath(value) : value.startsWith('file:') ? fileURLToPath(new URL(value)) : path.resolve(value);
+  }
+
   function emitStaticChildAsset (wrapRequire = false) {
-    if (isAbsolutePathStr(staticChildValue.value)) {
+    if (isAbsolutePathOrUrl(staticChildValue.value)) {
       let resolved;
-      try { resolved = path.resolve(staticChildValue.value); }
+      try { resolved = resolveAbsolutePathOrUrl(staticChildValue.value); }
       catch (e) {}
       let emitAsset;
       if (emitAsset = validAssetEmission(resolved)) {
@@ -1254,12 +1282,12 @@ module.exports = async function (content, map) {
         }
       }
     }
-    else if (isAbsolutePathStr(staticChildValue.then) && isAbsolutePathStr(staticChildValue.else)) {
+    else if (isAbsolutePathOrUrl(staticChildValue.then) && isAbsolutePathOrUrl(staticChildValue.else)) {
       let resolvedThen;
-      try { resolvedThen = path.resolve(staticChildValue.then); }
+      try { resolvedThen = resolveAbsolutePathOrUrl(staticChildValue.then); }
       catch (e) {}
       let resolvedElse;
-      try { resolvedElse = path.resolve(staticChildValue.else); }
+      try { resolvedElse = resolveAbsolutePathOrUrl(staticChildValue.else); }
       catch (e) {}
       let emitAsset;
       // only inline conditionals when both branches are known same inlinings
@@ -1279,9 +1307,9 @@ module.exports = async function (content, map) {
       for (let i = 0; i < staticChildValue.value.length; i++) {
         const value = staticChildValue.value[i];
         const el = staticChildNode.elements[i];
-        if (isAbsolutePathStr(value)) {
+        if (isAbsolutePathOrUrl(value)) {
           let resolved;
-          try { resolved = path.resolve(value); }
+          try { resolved = resolveAbsolutePathOrUrl(value); }
           catch (e) {}
           let emitAsset;
           if (emitAsset = validAssetEmission(resolved)) {
