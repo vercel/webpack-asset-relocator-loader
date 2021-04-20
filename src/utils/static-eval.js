@@ -291,7 +291,6 @@ const visitors = {
   },
   'MetaProperty': function MetaProperty(node) {
     if (node.meta.name === 'import' && node.property.name === 'meta') {
-      console.log(this.vars['import.meta']);
       return { value: this.vars['import.meta'] };
     }
     return undefined;
