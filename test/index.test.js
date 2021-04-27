@@ -35,6 +35,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
 
     const mfs = new MemoryFS();
     const compiler = webpack({
+      experiments: { topLevelAwait: true },
       entry,
       optimization: { nodeEnv: false, minimize: false },
       mode: "production",
