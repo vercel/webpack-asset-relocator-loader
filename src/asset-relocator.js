@@ -528,7 +528,7 @@ module.exports = async function (content, map) {
   catch (e) {}
   if (!ast) {
     try {
-      ast = acorn.parse(code, { sourceType: 'module', ecmaVersion: 2020 });
+      ast = acorn.parse(code, { sourceType: 'module', ecmaVersion: 2020, allowAwaitOutsideFunction: true });
       isESM = true;
     }
     catch (e) {
