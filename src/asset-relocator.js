@@ -82,6 +82,7 @@ function getAssetState (options, compilation) {
       assets: Object.create(null),
       assetNames: Object.create(null),
       assetMeta: Object.create(null),
+      assetSymlinks: Object.create(null),
       hadOptions: false
     });
   }
@@ -118,7 +119,7 @@ function getEntryIds (compilation) {
             if (entry && Array.isArray(entry.import)) {
               return entry.import;
             }
-            
+
             return [];
           })
         ).map(entryString => resolve.sync(entryString, { extensions }));
@@ -359,8 +360,8 @@ module.exports = async function (content, map) {
     let name;
     if (!(name = assetState.assets[id]))
       name = assetState.assets[id] = getUniqueAssetName(id.substr(pkgBase.length + 1).replace(/\\/g, '/'), id, assetState.assetNames);
-    
-    const permissions = await new Promise((resolve, reject) => 
+
+    const permissions = await new Promise((resolve, reject) =>
       stat(id, (err, stats) => err ? reject(err) : resolve(stats.mode))
     );
     assetState.assetMeta[name] = { path: id, permissions };
@@ -374,7 +375,7 @@ module.exports = async function (content, map) {
     return this.callback(null, code, map);
 
   let code = content.toString();
-  
+
   if (typeof options.production === 'boolean' && staticProcess.env.NODE_ENV === UNKNOWN) {
     staticProcess.env.NODE_ENV = options.production ? 'production' : 'dev';
   }
@@ -419,7 +420,7 @@ module.exports = async function (content, map) {
         new Promise((resolve, reject) =>
           readFile(assetPath, (err, source) => err ? reject(err) : resolve(source))
         ),
-        await new Promise((resolve, reject) => 
+        await new Promise((resolve, reject) =>
           lstat(assetPath, (err, stats) => err ? reject(err) : resolve(stats))
         )
       ]);
@@ -454,7 +455,7 @@ module.exports = async function (content, map) {
     assetState.assets[assetDirPath] = name;
 
     // this used to be async but had to switch to support no emission for no detection
-    const files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }).filter(name => 
+    const files = glob.sync(assetDirPath + wildcardPattern, { mark: true, ignore: 'node_modules/**/*' }).filter(name =>
       !excludeAssetExtensions.has(path.extname(name)) &&
       !excludeAssetFiles.has(path.basename(name)) &&
       !name.endsWith('/')
@@ -469,7 +470,7 @@ module.exports = async function (content, map) {
           new Promise((resolve, reject) =>
             readFile(file, (err, source) => err ? reject(err) : resolve(source))
           ),
-          await new Promise((resolve, reject) => 
+          await new Promise((resolve, reject) =>
             lstat(file, (err, stats) => err ? reject(err) : resolve(stats))
           )
         ]);
@@ -874,7 +875,7 @@ module.exports = async function (content, map) {
         // and that function has a [TRIGGER] symbol -> trigger asset emission from it
         if (calleeValue && typeof calleeValue.value === 'function' && calleeValue.value[TRIGGER]) {
           staticChildValue = computePureStaticValue(node, true).result;
-          // if it computes, then we start backtrackingelse 
+          // if it computes, then we start backtrackingelse
           if (staticChildValue) {
             staticChildNode = node;
             return backtrack(this, parent);
@@ -1134,7 +1135,7 @@ module.exports = async function (content, map) {
             boundRequireName = fnName.name + '$$mod';
             setKnownBinding(fnName.name, BOUND_REQUIRE);
             const newFn = prefix + code.substring(node.start, fnName.start) + boundRequireName + code.substring(fnName.end, args[0].start + !wrapArgs) +
-                (wrapArgs ? '(' : '') + requireDecl.id.name + ', ' + code.substring(args[0].start, args[args.length - 1].end + !wrapArgs) + (wrapArgs ? ')' : '') + 
+                (wrapArgs ? '(' : '') + requireDecl.id.name + ', ' + code.substring(args[0].start, args[args.length - 1].end + !wrapArgs) + (wrapArgs ? ')' : '') +
                 code.substring(args[0].end + !wrapArgs, requireDeclaration.start) + code.substring(requireDeclaration.end, node.end);
             magicString.appendRight(node.end, newFn);
           }

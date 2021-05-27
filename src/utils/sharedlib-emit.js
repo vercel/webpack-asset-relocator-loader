@@ -25,7 +25,7 @@ module.exports = async function (pkgPath, assetState, assetBase, emitFile, debug
       new Promise((resolve, reject) =>
         fs.readFile(file, (err, source) => err ? reject(err) : resolve(source))
       ),
-      await new Promise((resolve, reject) => 
+      await new Promise((resolve, reject) =>
         fs.lstat(file, (err, stats) => err ? reject(err) : resolve(stats))
       )
     ]);
