@@ -23,6 +23,7 @@ const { pathToFileURL, fileURLToPath } = require('url');
 acorn = acorn.Parser.extend(
   require("acorn-class-fields"),
   require("acorn-static-class-features"),
+  require("acorn-private-class-elements")
 );
 
 const extensions = ['.js', '.json', '.node'];
