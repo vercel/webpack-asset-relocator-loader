@@ -37,7 +37,7 @@ module.exports = require("fs");;
 /************************************************************************/
 /******/ /* webpack/runtime/compat */
 /******/ 
-/******/ if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('..', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";/************************************************************************/
+/******/ if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
