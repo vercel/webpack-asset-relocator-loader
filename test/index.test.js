@@ -10,7 +10,7 @@ global._unit = true;
 const relocateLoader = require(__dirname + (global.coverage ? "/../src/asset-relocator" : "/../"));
 const plugins = [{
   apply(compiler) {
-    compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation, null, true));
+    compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation));
   }
 }];
 
@@ -37,15 +37,19 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
 
     const mfs = new MemoryFS();
     const compiler = webpack({
-      experiments: { topLevelAwait: true },
+      experiments: { 
+        topLevelAwait: true,
+        outputModule: unitTest.startsWith('esm-')
+      },
       entry,
       optimization: { nodeEnv: false, minimize: false },
       mode: "production",
-      target: "node",
+      target: "node14",
       output: {
+        module: unitTest.startsWith('esm-'),
         path: "/",
         filename: "index.js",
-        libraryTarget: "commonjs2"
+        libraryTarget: unitTest.startsWith('esm-') ? "module" : "commonjs2"
       },
       externals: ['express', 'pug'],
       module: {
@@ -55,7 +59,6 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
           use: [{
             loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
             options: {
-              esm: unitTest.startsWith('esm-'),
               existingAssetNames: ['existing.txt'],
               filterAssetBase: path.resolve('test'),
               customEmit: unitTest.startsWith('custom-emit') ? path => {
