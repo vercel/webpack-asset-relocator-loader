@@ -10,12 +10,14 @@ global._unit = true;
 const relocateLoader = require(__dirname + (global.coverage ? "/../src/asset-relocator" : "/../"));
 const plugins = [{
   apply(compiler) {
-    compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation));
+    compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation, null, true));
   }
 }];
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
+    if (!unitTest.startsWith('esm-'))
+      return;
     // simple error test
     let shouldError = false;
     if (unitTest.endsWith('-err'))
@@ -53,6 +55,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
           use: [{
             loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
             options: {
+              esm: unitTest.startsWith('esm-'),
               existingAssetNames: ['existing.txt'],
               filterAssetBase: path.resolve('test'),
               customEmit: unitTest.startsWith('custom-emit') ? path => {

@@ -34,6 +34,8 @@ Any `.node` files included will also support binary relocation.
         use: {
           loader: '@vercel/webpack-asset-relocator-loader',
           options: {
+            // optional, whether the bundle is an esm bundle (import.meta.url / import() instead of __dirname / require)
+            esm: false,
             // optional, base folder for asset emission (eg assets/name.ext)
             outputAssetBase: 'assets',
             // optional, restrict asset emissions to only the given folder.
@@ -99,7 +101,7 @@ webpack({
     {
       apply(compiler) {
         compiler.hooks.compilation.tap("webpack-asset-relocator-loader", compilation => {
-          relocateLoader.initAssetCache(compilation, outputAssetBase);
+          relocateLoader.initAssetCache(compilation, outputAssetBase, esm);
         });
       }
     }

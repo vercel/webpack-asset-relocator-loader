@@ -324,7 +324,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 }
 
 const hooked = new WeakSet();
-function injectPathHook (compilation, outputAssetBase) {
+function injectPathHook (compilation, outputAssetBase, esm) {
   const { mainTemplate } = compilation;
   if (!hooked.has(mainTemplate)) {
     hooked.add(mainTemplate);
@@ -336,7 +336,7 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${esm ? "new URL('..', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
     });
   }
 }
@@ -351,7 +351,7 @@ module.exports = async function (content, map) {
   // injection to set __webpack_require__.ab
   const options = getOptions(this);
 
-  injectPathHook(this._compilation, options.outputAssetBase);
+  injectPathHook(this._compilation, options.outputAssetBase, options.esm);
 
   if (id.endsWith('.node')) {
     const assetState = getAssetState(options, this._compilation);
@@ -1344,8 +1344,8 @@ module.exports.getSymlinks = function (compilation) {
     return lastState.assetSymlinks;
 };
 
-module.exports.initAssetCache = module.exports.initAssetMetaCache = function (compilation, outputAssetBase) {
-  injectPathHook(compilation, outputAssetBase);
+module.exports.initAssetCache = module.exports.initAssetMetaCache = function (compilation, outputAssetBase, esm) {
+  injectPathHook(compilation, outputAssetBase, esm);
   const entryIds = getEntryIds(compilation);
   if (!entryIds)
     return;
