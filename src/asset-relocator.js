@@ -325,6 +325,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 
 const hooked = new WeakSet();
 function injectPathHook (compilation, outputAssetBase) {
+  const esm = compilation.outputOptions.module;
   const { mainTemplate } = compilation;
   if (!hooked.has(mainTemplate)) {
     hooked.add(mainTemplate);
@@ -336,7 +337,7 @@ function injectPathHook (compilation, outputAssetBase) {
         if (relBase.length)
           relBase = '/' + relBase;
       }
-      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
+      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
     });
   }
 }

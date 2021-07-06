@@ -16,6 +16,8 @@ const plugins = [{
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
+    if (!unitTest.startsWith('esm-'))
+      return;
     // simple error test
     let shouldError = false;
     if (unitTest.endsWith('-err'))
@@ -35,15 +37,19 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
 
     const mfs = new MemoryFS();
     const compiler = webpack({
-      experiments: { topLevelAwait: true },
+      experiments: { 
+        topLevelAwait: true,
+        outputModule: unitTest.startsWith('esm-')
+      },
       entry,
       optimization: { nodeEnv: false, minimize: false },
       mode: "production",
-      target: "node",
+      target: "node14",
       output: {
+        module: unitTest.startsWith('esm-'),
         path: "/",
         filename: "index.js",
-        libraryTarget: "commonjs2"
+        libraryTarget: unitTest.startsWith('esm-') ? "module" : "commonjs2"
       },
       externals: ['express', 'pug'],
       module: {
