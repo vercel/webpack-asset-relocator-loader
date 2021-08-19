@@ -350,7 +350,7 @@ module.exports = async function (content, map) {
   const dir = path.dirname(id);
 
   // injection to set __webpack_require__.ab
-  const options = getOptions(this);
+  const options = getOptions(this) || {};
 
   injectPathHook(this._compilation, options.outputAssetBase);
 

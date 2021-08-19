@@ -16,10 +16,7 @@ module.exports = {
       test: /\.m?js$/,
       parser: { amd: false },
       use: {
-        loader: __dirname + '/../../src/asset-relocator.js',
-        options: {
-          wrapperCompatibility: true
-        }
+        loader: __dirname + '/../../src/asset-relocator.js'
       }
     }]
   }
