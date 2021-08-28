@@ -16,8 +16,6 @@ const plugins = [{
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
-    if (!unitTest.startsWith('esm-'))
-      return;
     // simple error test
     let shouldError = false;
     if (unitTest.endsWith('-err'))
