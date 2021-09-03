@@ -36,5 +36,5 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node == 12 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
         run: yarn semantic-release
