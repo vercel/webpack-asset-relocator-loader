@@ -285,17 +285,21 @@ const BOUND_REQUIRE = Symbol();
 
 function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks, log) {
   const wildcardBlockIndex = wildcardBlocks.length;
-  const trailingWildcard = wildcardPath.endsWith(WILDCARD);
 
-  const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+  const wildcardPathNormalized = wildcardPath.split(path.sep).join(path.posix.sep)
+  const dirNormalized = dir.split(path.sep).join(path.posix.sep)
 
-  const wildcardPrefix = wildcardPath.substr(0, wildcardIndex);
-  const wildcardSuffix = wildcardPath.substr(wildcardIndex + 1);
+  const trailingWildcard = wildcardPathNormalized.endsWith(WILDCARD);
+
+  const wildcardIndex = wildcardPathNormalized.indexOf(WILDCARD);
+
+  const wildcardPrefix = wildcardPathNormalized.substr(0, wildcardIndex);
+  const wildcardSuffix = wildcardPathNormalized.substr(wildcardIndex + 1);
   const endPattern = wildcardSuffix ? '?(.@(js|json|node))' : '.@(js|json|node)';
 
   // sync to support no emission case
   if (log)
-    console.log('Generating wildcard requires for ' + wildcardPath.replace(WILDCARD, '*'));
+    console.log('Generating wildcard requires for ' + wildcardPathNormalized.replace(WILDCARD, '*'));
   let options = glob.sync(wildcardPrefix + '**' + wildcardSuffix + endPattern, { mark: true, ignore: 'node_modules/**/*' });
 
   if (!options.length)
@@ -303,7 +307,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 
   const optionConditions = options.map((file, index) => {
     const arg = JSON.stringify(file.substring(wildcardPrefix.length, file.lastIndexOf(wildcardSuffix)));
-    let relPath = path.relative(dir, file).replace(/\\/g, '/');
+    let relPath = path.posix.relative(dirNormalized, file);
     if (!relPath.startsWith('../'))
       relPath = './' + relPath;
     let condition = index === 0 ? '  ' : '  else ';
