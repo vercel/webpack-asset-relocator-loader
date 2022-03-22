@@ -517,7 +517,7 @@ module.exports = async function (content, map) {
           assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
       }
       if (curPattern.length) {
-        assetExpressions += " + \'" + JSON.stringify(curPattern).replace(/\\/g, '/').slice(1, -1) + "'";
+        assetExpressions += " + \'" + JSON.stringify(curPattern.replace(/\\/g, '/')).slice(1, -1) + "'";
       }
     }
     return "__webpack_require__.ab + " + JSON.stringify((name + firstPrefix).replace(/\\/g, '/')) + assetExpressions;
