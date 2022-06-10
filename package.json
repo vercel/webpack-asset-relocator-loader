@@ -34,7 +34,7 @@
     "resolve": "^1.10.0",
     "resolve-from": "3.0.0",
     "rollup-pluginutils": "^2.8.2",
-    "semantic-release": "^17.3.0",
+    "semantic-release": "^19.0.3",
     "socket.io-client": "^2.2.0",
     "sourcemap-codec": "^1.4.4",
     "webpack": "^5",
