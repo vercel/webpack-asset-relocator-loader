@@ -6,7 +6,7 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "ncc build src/asset-relocator.js",
+    "build": "ncc build src/asset-relocator.js -e resolve",
     "codecov": "codecov",
     "test": "npm run build && jest",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
@@ -14,6 +14,9 @@
   "files": [
     "dist/*"
   ],
+  "dependencies": {
+    "resolve": "^1.10.0"
+  },
   "devDependencies": {
     "@vercel/ncc": "^0.25.1",
     "acorn": "^8.3.0",
@@ -31,7 +34,6 @@
     "memory-fs": "^0.4.1",
     "node-gyp-build": "^4.2.1",
     "node-pre-gyp": "^0.12.0",
-    "resolve": "^1.10.0",
     "resolve-from": "3.0.0",
     "rollup-pluginutils": "^2.8.2",
     "semantic-release": "^17.3.0",
