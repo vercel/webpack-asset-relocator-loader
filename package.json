@@ -9,7 +9,7 @@
     "build": "ncc build src/asset-relocator.js -e resolve",
     "codecov": "codecov",
     "test": "npm run build && jest",
-    "test-pnp": "yarn pack -f test/yarn-pnp/assets-plugin-tarball.tgz && cd test/yarn-pnp && echo '' > yarn.lock && yarn install && yarn run build && yarn run test",
+    "test-pnp": "yarn pack -f test/yarn-pnp/assets-plugin-tarball.tgz && cd test/yarn-pnp && echo '' > yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install && yarn run build && yarn run test",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },
   "files": [
