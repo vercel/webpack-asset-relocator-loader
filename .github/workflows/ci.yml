@@ -30,6 +30,7 @@ jobs:
       - name: Run Tests
         run: yarn test
       - name: Run yarn pnp tests
+        if: matrix.os == 'ubuntu-latest'
         run: yarn test-pnp
       - name: Coverage
         if: matrix.os == 'ubuntu-latest'
