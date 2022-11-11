@@ -905,7 +905,7 @@ module.exports = async function (content, map) {
             break;
             // require('bindings')(...)
             case BINDINGS:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   let staticBindingsInstance = false;
@@ -934,7 +934,7 @@ module.exports = async function (content, map) {
               }
             break;
             case NODE_GYP_BUILD:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   transformed = true;
@@ -963,7 +963,7 @@ module.exports = async function (content, map) {
             break;
             // nbind.init(...) -> require('./resolved.node')
             case NBIND_INIT:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   const bindingInfo = nbind(arg.value);
