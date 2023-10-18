@@ -905,7 +905,7 @@ module.exports = async function (content, map) {
             break;
             // require('bindings')(...)
             case BINDINGS:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   let staticBindingsInstance = false;
@@ -934,19 +934,21 @@ module.exports = async function (content, map) {
               }
             break;
             case NODE_GYP_BUILD:
-              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
-                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
-                transformed = true;
-                let resolved;
-                try {
-                  resolved = nodeGypBuild.path(dir);
-                }
-                catch (e) {}
-                if (resolved) {
-                  staticChildValue = { value: resolved };
-                  staticChildNode = node;
-                  emitStaticChildAsset(path);
-                  return backtrack(this, parent);
+              if (node.arguments.length > 0) {
+                const arg = computePureStaticValue(node.arguments[0], false).result;
+                if (arg && arg.value) {
+                  transformed = true;
+                  let resolved;
+                  try {
+                    resolved = nodeGypBuild.path(arg.value);
+                  }
+                  catch (e) {}
+                  if (resolved) {
+                    staticChildValue = { value: resolved };
+                    staticChildNode = node;
+                    emitStaticChildAsset(path);
+                    return backtrack(this, parent);
+                  }
                 }
               }
             break;
@@ -961,7 +963,7 @@ module.exports = async function (content, map) {
             break;
             // nbind.init(...) -> require('./resolved.node')
             case NBIND_INIT:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   const bindingInfo = nbind(arg.value);
