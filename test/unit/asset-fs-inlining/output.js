@@ -1,11 +1,11 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 747:
+/***/ 147:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("fs");;
+module.exports = require("fs");
 
 /***/ })
 
@@ -38,12 +38,14 @@ module.exports = require("fs");;
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const fs = __webpack_require__(747);
-console.log(fs.readFileSync(__webpack_require__.ab + "asset.txt"));
+const fs = __webpack_require__(147);
+console.log(fs.readFileSync(__nccwpck_require__.ab + "asset.txt"));
 })();
 
 module.exports = __webpack_exports__;

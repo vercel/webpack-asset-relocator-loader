@@ -7,9 +7,9 @@
 "use strict";
 
 
-var os = __webpack_require__(87);
-var fs = __webpack_require__(747);
-var path = __webpack_require__(622);
+var os = __webpack_require__(37);
+var fs = __webpack_require__(147);
+var path = __webpack_require__(17);
 
 var verifyFile;
 
@@ -20,10 +20,10 @@ var packageName = '@ffmpeg-installer/' + platform;
 var binary = os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg.exe';
 
 var npm3Path = path.resolve(__dirname, '..', platform);
-var npm2Path = __webpack_require__.ab + "ffmpeg-installer";
+var npm2Path = __nccwpck_require__.ab + "ffmpeg-installer";
 
 var npm3Binary = path.join(npm3Path, binary);
-var npm2Binary = __webpack_require__.ab + "ffmpeg.exe";
+var npm2Binary = __nccwpck_require__.ab + "ffmpeg.exe";
 
 var npm3Package = path.join(npm3Path, 'package.json');
 var npm2Package = path.join(npm2Path, 'package.json');
@@ -32,8 +32,8 @@ var ffmpegPath, packageJson;
 
 if (verifyFile(npm3Binary)) {
     ffmpegPath = npm3Binary;
-} else if (verifyFile(__webpack_require__.ab + "ffmpeg.exe")) {
-    ffmpegPath = __webpack_require__.ab + "ffmpeg.exe";
+} else if (verifyFile(__nccwpck_require__.ab + "ffmpeg.exe")) {
+    ffmpegPath = __nccwpck_require__.ab + "ffmpeg.exe";
 } else {
     throw 'Could not find ffmpeg executable, tried "' + npm3Binary + '" and "' + npm2Binary + '"';
 }
@@ -42,34 +42,34 @@ var version = packageJson.ffmpeg || packageJson.version;
 var url = packageJson.homepage;
 
 module.exports = {
-    path: __webpack_require__.ab + "ffmpeg.exe",
+    path: __nccwpck_require__.ab + "ffmpeg.exe",
     version: version,
     url: url
 };
 
 /***/ }),
 
-/***/ 747:
+/***/ 147:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("fs");;
+module.exports = require("fs");
 
 /***/ }),
 
-/***/ 87:
+/***/ 37:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("os");;
+module.exports = require("os");
 
 /***/ }),
 
-/***/ 622:
+/***/ 17:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("path");;
+module.exports = require("path");
 
 /***/ })
 
@@ -102,7 +102,9 @@ module.exports = require("path");;
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {

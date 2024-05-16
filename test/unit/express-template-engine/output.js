@@ -4,8 +4,8 @@
 /***/ 357:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-const express = __webpack_require__(127);
-const path = __webpack_require__(622);
+const express = __webpack_require__(146);
+const path = __webpack_require__(17);
 
 const app = express();
 
@@ -22,19 +22,19 @@ module.exports = app;
 
 /***/ }),
 
-/***/ 127:
+/***/ 146:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("express");;
+module.exports = require("express");
 
 /***/ }),
 
-/***/ 622:
+/***/ 17:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("path");;
+module.exports = require("path");
 
 /***/ })
 
@@ -67,7 +67,9 @@ module.exports = require("path");;
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 /******/ 	
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
