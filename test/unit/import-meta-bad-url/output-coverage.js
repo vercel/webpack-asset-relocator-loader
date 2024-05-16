@@ -17,13 +17,15 @@
 /******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
 ;// CONCATENATED MODULE: external "fs"
-const external_fs_namespaceObject = require("fs");;
+const external_fs_namespaceObject = require("fs");
 ;// CONCATENATED MODULE: ./test/unit/import-meta-bad-url/input.js
 
 
