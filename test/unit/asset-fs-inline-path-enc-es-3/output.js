@@ -1,28 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
 /******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat get default export */
@@ -67,21 +46,23 @@
 /******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
 ;// CONCATENATED MODULE: external "fs"
-const external_fs_namespaceObject = require("fs");;
+const external_fs_namespaceObject = require("fs");
 var external_fs_default = /*#__PURE__*/__webpack_require__.n(external_fs_namespaceObject);
 ;// CONCATENATED MODULE: external "path"
-const external_path_namespaceObject = require("path");;
+const external_path_namespaceObject = require("path");
 ;// CONCATENATED MODULE: ./test/unit/asset-fs-inline-path-enc-es-3/input.js
 
 
 
-console.log(external_fs_default().readFileSync(__webpack_require__.ab + "asset.txt", 'utf8'));
+console.log(external_fs_default().readFileSync(__nccwpck_require__.ab + "asset.txt", 'utf8'));
 module.exports = __webpack_exports__;
 /******/ })()
 ;

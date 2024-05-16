@@ -37,7 +37,9 @@ module.exports = 'oracledb';
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
@@ -56,7 +58,7 @@ for (var i = 0; i < binaryLocations.length; i++) {
       var nodeInfo;
       if (err.code === 'MODULE_NOT_FOUND') {
         // none of the three binaries could be found
-        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __webpack_require__.ab + "oracledb/" + x).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
+        nodeInfo = `\n  Looked for ${binaryLocations.map(x => __nccwpck_require__.ab + "oracledb/" + x).join(', ')}\n  ${nodbUtil.getInstallURL()}\n`;
       } else {
         nodeInfo = `\n  Node.js require('oracledb') error was:\n  ${err.message}\n  ${nodbUtil.getInstallHelp()}\n`;
       }

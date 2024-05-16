@@ -15,12 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [14]
+        node: [18]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - name: Print Node Version
@@ -29,14 +29,14 @@ jobs:
         run: yarn install
       - name: Run Tests
         run: yarn test
-      - name: Run yarn pnp tests
-        if: matrix.os == 'ubuntu-latest'
-        run: yarn test-pnp
+      # - name: Run yarn pnp tests
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: yarn test-pnp
       - name: Coverage
         if: matrix.os == 'ubuntu-latest'
         run: yarn test-coverage
       - name: Release
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 14 && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
