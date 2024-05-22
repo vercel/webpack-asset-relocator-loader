@@ -18,8 +18,10 @@
   "dependencies": {
     "resolve": "^1.10.0"
   },
-  "devDependencies": {
+  "peerDependencies": {
     "@vercel/ncc": "^0.38.1",
+  },
+  "devDependencies": {
     "acorn": "^8.3.0",
     "acorn-class-fields": "^1.0.0",
     "acorn-private-class-elements": "^1.0.0",
