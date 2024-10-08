@@ -327,23 +327,47 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
   return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam})`;
 }
 
-const hooked = new WeakSet();
 function injectPathHook (compilation, outputAssetBase) {
   const esm = compilation.outputOptions.module;
-  const { mainTemplate } = compilation;
-  if (!hooked.has(mainTemplate)) {
-    hooked.add(mainTemplate);
 
-    mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
+  const { RuntimeModule, RuntimeGlobals } = compilation.compiler.webpack
+
+  class AssetRelocatorLoaderRuntimeModule extends RuntimeModule {
+    constructor({
+      relBase
+    }) {
+      super('asset-relocator-loader');
+      
+      this.relBase = relBase
+    }
+
+    generate() {
+      const requireBase = `${esm ? "new URL('', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`
+
+      return [
+        `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`,
+        `if (typeof __nccwpck_require__ !== 'undefined') { __nccwpck_require__.ab = ${requireBase} } else if (typeof __webpack_require__ !== 'undefined') { __nccwpck_require__ = __webpack_require__ };`
+      ].join('\n');
+    }
+  }
+
+  compilation.hooks.runtimeRequirementInTree
+    .for(RuntimeGlobals.require)
+    .tap('asset-relocator-loader', (chunk) => {
       let relBase = '';
+
       if (chunk.name) {
         relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
-        if (relBase.length)
+
+        if (relBase.length) {
           relBase = '/' + relBase;
+        }
       }
-      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
-    });
-  }
+
+      compilation.addRuntimeModule(chunk, new AssetRelocatorLoaderRuntimeModule({ relBase }));
+
+      return true;
+  });
 }
 
 module.exports = async function (content, map) {
