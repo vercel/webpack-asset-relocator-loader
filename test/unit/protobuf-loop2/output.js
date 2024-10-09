@@ -36,9 +36,10 @@ module.exports = require("path");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -51,11 +52,11 @@ const path = __webpack_require__(17);
     // Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
     // and wrappers. compiler/plugin is excluded in Protobuf.js and here.
     var wellKnownProtos = ['asset1', 'asset2'];
-    var sourceDir = __nccwpck_require__.ab + "assets";
+    var sourceDir = __webpack_require__.ab + "assets";
     var _i;
     for (_i = 0; _i < wellKnownProtos_1.length; _i++) {
         var proto = wellKnownProtos[_i];
-        var file = __nccwpck_require__.ab + "assets/" + proto + '.txt';
+        var file = __webpack_require__.ab + "assets/" + proto + '.txt';
         var descriptor_1 = Protobuf.loadSync(file).toJSON();
         // @ts-ignore
         Protobuf.common(proto, descriptor_1.nested.google.nested);

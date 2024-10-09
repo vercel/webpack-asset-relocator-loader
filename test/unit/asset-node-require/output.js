@@ -2,9 +2,9 @@
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 534:
-/***/ ((module) => {
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-module.exports = require(__nccwpck_require__.ab + "mock.node")
+module.exports = require(__webpack_require__.ab + "mock.node")
 
 /***/ })
 
@@ -35,9 +35,10 @@ module.exports = require(__nccwpck_require__.ab + "mock.node")
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};

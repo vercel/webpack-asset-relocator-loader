@@ -342,12 +342,9 @@ function injectPathHook (compilation, outputAssetBase) {
     }
 
     generate() {
-      const requireBase = `${esm ? "new URL('', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`
+      const requireBase = `${esm ? "new URL('', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
 
-      return [
-        `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`,
-        `if (typeof __nccwpck_require__ !== 'undefined') { __nccwpck_require__.ab = ${requireBase} } else if (typeof __webpack_require__ !== 'undefined') { __nccwpck_require__ = __webpack_require__ };`
-      ].join('\n');
+      return `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`
     }
   }
 
@@ -364,7 +361,11 @@ function injectPathHook (compilation, outputAssetBase) {
         }
       }
 
-      compilation.addRuntimeModule(chunk, new AssetRelocatorLoaderRuntimeModule({ relBase }));
+      try {
+        compilation.addRuntimeModule(chunk, new AssetRelocatorLoaderRuntimeModule({ relBase }));
+      } catch (error) {
+        console.error(error);
+      }
 
       return true;
   });

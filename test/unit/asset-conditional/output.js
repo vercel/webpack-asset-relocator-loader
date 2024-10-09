@@ -36,16 +36,17 @@ module.exports = require("path");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 const path = __webpack_require__(17);
-let moduleJsPath = isHarmony ? __nccwpck_require__.ab + "asset1.txt" : __nccwpck_require__.ab + "asset2.txt";
+let moduleJsPath = isHarmony ? __webpack_require__.ab + "asset1.txt" : __webpack_require__.ab + "asset2.txt";
 })();
 
 module.exports = __webpack_exports__;

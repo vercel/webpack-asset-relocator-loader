@@ -53,9 +53,10 @@ module.exports = 'dep';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 /******/ 	
