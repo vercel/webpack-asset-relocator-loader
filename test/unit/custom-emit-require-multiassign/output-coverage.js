@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 73:
+/***/ 402:
 /***/ ((module) => {
 
 module.exports = 'a';
@@ -9,7 +9,7 @@ module.exports = 'a';
 
 /***/ }),
 
-/***/ 785:
+/***/ 714:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 var m = './a.js';
@@ -17,7 +17,7 @@ var m = './a.js';
 if (global.something)
   m = './b.js';
 
-module.exports = __webpack_require__(73);
+module.exports = __webpack_require__(402);
 
 
 /***/ })
@@ -49,16 +49,17 @@ module.exports = __webpack_require__(73);
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 /******/ 	
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module used 'module' so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(785);
+/******/ 	var __webpack_exports__ = __webpack_require__(714);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

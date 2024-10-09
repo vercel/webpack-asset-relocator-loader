@@ -36,9 +36,10 @@ module.exports = require("fs");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -49,8 +50,8 @@ var __webpack_exports__ = {};
 const fs = __webpack_require__(147);
 
 const REPORT_JAVASCRIPT = [
-  fs.readFileSync(__nccwpck_require__.ab + "util.js", 'utf8'),
-  fs.readFileSync(__nccwpck_require__.ab + "dom.js", 'utf8'),
+  fs.readFileSync(__webpack_require__.ab + "util.js", 'utf8'),
+  fs.readFileSync(__webpack_require__.ab + "dom.js", 'utf8'),
 ].join(';\n');
 
 })();

@@ -6,9 +6,9 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "ncc build src/asset-relocator.js -e resolve",
+    "build": "node ./scripts/build.js",
     "codecov": "codecov",
-    "test": "npm run build && jest",
+    "test": "yarn run build && jest",
     "test-pnp": "yarn pack -f test/yarn-pnp/assets-plugin-tarball.tgz && cd test/yarn-pnp && echo '' > yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install && yarn run build && yarn run test",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\" && codecov"
   },

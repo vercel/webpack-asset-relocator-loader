@@ -36,17 +36,18 @@ module.exports = require("fs");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 const fs = __webpack_require__(147);
-console.log(fs.readFileSync(__nccwpck_require__.ab + "asset.txt"));
-console.log(fs.readFileSync(__nccwpck_require__.ab + "asset1.txt"));
+console.log(fs.readFileSync(__webpack_require__.ab + "asset.txt"));
+console.log(fs.readFileSync(__webpack_require__.ab + "asset1.txt"));
 })();
 
 module.exports = __webpack_exports__;

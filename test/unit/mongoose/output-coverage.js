@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 393:
+/***/ 569:
 /***/ ((module) => {
 
 module.exports = 'connection';
@@ -36,9 +36,10 @@ module.exports = 'connection';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -46,7 +47,7 @@ var __webpack_exports__ = {};
 (() => {
 const driver = global.MONGOOSE_DRIVER_PATH || './dir';
 
-const Connection = __webpack_require__(393);
+const Connection = __webpack_require__(569);
 })();
 
 module.exports = __webpack_exports__;

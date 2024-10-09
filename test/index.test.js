@@ -102,7 +102,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
     try {
       code = mfs.readFileSync("/index.js", "utf8");
     }
-    catch (e) {
+    catch (err) {
       throw new Error(stats.toString());
     }
 
@@ -112,10 +112,10 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
       .replace(/\r/g, "");
     try {
       expect(actual).toBe(expected);
-    } catch (e) {
+    } catch (err) {
       // useful for updating fixtures
       fs.writeFileSync(`${testDir}/actual.js`, actual);
-      throw e;
+      throw err;
     }
 
     // very simple asset validation in unit tests
