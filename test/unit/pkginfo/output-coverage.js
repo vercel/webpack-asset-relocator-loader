@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 943:
+/***/ 537:
 /***/ ((module) => {
 
 Object.assign(module.exports, {"version":"x.y.z","dependencies":{}});
@@ -36,16 +36,11 @@ Object.assign(module.exports, {"version":"x.y.z","dependencies":{}});
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
-/******/ 	
-/************************************************************************/
 /******/ 	
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(943);
+/******/ 	var __webpack_exports__ = __webpack_require__(537);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

@@ -44,9 +44,10 @@ module.exports = require("path");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -55,11 +56,11 @@ var __webpack_exports__ = {};
 const fs = __webpack_require__(147);
 const { join } = __webpack_require__(17);
 
-console.log(fs.readFileSync(__nccwpck_require__.ab + "asset.txt", 'utf8'));
+console.log(fs.readFileSync(__webpack_require__.ab + "asset.txt", 'utf8'));
 
 (function () {
   var join = () => 'nope';
-  console.log(fs.readFileSync(join(__nccwpck_require__.ab + "asset-fs-inline-path-shadow", 'asset.txt'), 'utf8'));
+  console.log(fs.readFileSync(join(__webpack_require__.ab + "asset-fs-inline-path-shadow", 'asset.txt'), 'utf8'));
 })();
 })();
 

@@ -1,15 +1,13 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
-
-/***/ 372:
+/******/ 	var __webpack_modules__ = ([
+/* 0 */
 /***/ ((module) => {
 
 module.exports = 'dep';
 
 
 /***/ })
-
-/******/ 	});
+/******/ 	]);
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -36,9 +34,10 @@ module.exports = 'dep';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -56,7 +55,7 @@ const reaction = (name) => {
 
 const reactions = {
 	repository: {
-		publicized: reaction$$mod(__webpack_require__(372), './dep')
+		publicized: reaction$$mod(__webpack_require__(0), './dep')
 	}
 };
 

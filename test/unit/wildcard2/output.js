@@ -36,9 +36,10 @@ module.exports = require("path");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -46,7 +47,7 @@ var __webpack_exports__ = {};
 (() => {
 const path = __webpack_require__(17);
 
-fs.readFileSync(__nccwpck_require__.ab + "wildcard2/" + unknown + '/asset1.txt');
+fs.readFileSync(__webpack_require__.ab + "wildcard2/" + unknown + '/asset1.txt');
 
 
 })();

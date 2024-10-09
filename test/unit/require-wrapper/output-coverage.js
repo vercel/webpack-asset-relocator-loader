@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 896:
+/***/ 946:
 /***/ ((module) => {
 
 module.exports = 'dep';
@@ -36,9 +36,10 @@ module.exports = 'dep';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -56,7 +57,7 @@ const reaction = name => {
 
 const reactions = {
 	repository: {
-		publicized: reaction$$mod(__webpack_require__(896), './dep')
+		publicized: reaction$$mod(__webpack_require__(946), './dep')
 	}
 };
 

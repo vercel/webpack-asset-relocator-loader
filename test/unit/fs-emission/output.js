@@ -36,9 +36,10 @@ module.exports = require("fs");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	(() => {
+/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -48,11 +49,11 @@ const fs = __webpack_require__(147);
 
 fs.readFile('./asset1.txt')
 
-fs.readFile(__nccwpck_require__.ab + "asset2.txt")
+fs.readFile(__webpack_require__.ab + "asset2.txt")
 
-const _basePath = __nccwpck_require__.ab + "fs-emission";
+const _basePath = __webpack_require__.ab + "fs-emission";
 const asset3 = 'asset3.txt';
-fs.readFileSync(__nccwpck_require__.ab + "asset3.txt", 'utf8');
+fs.readFileSync(__webpack_require__.ab + "asset3.txt", 'utf8');
 
 })();
 
