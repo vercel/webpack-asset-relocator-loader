@@ -204,6 +204,7 @@ const staticModules = Object.assign(Object.create(null), {
     default: os,
     ...os
   },
+  'node:path': undefined, // point to the same reference as "path" below
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
@@ -223,6 +224,8 @@ const staticModules = Object.assign(Object.create(null), {
     default: RESOLVE_FROM
   }
 });
+staticModules["node:path"] = staticModules.path;
+
 const globalBindings = {
   MONGOOSE_DRIVER_PATH: undefined,
   URL: URL
