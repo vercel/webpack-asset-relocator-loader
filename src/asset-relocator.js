@@ -329,15 +329,12 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 
 function injectPathHook (compilation, outputAssetBase) {
   const esm = compilation.outputOptions.module;
-
   const { RuntimeModule, RuntimeGlobals } = compilation.compiler.webpack
 
   class AssetRelocatorLoaderRuntimeModule extends RuntimeModule {
-    constructor({
-      relBase
-    }) {
+    constructor({ relBase }) {
       super('asset-relocator-loader');
-      
+
       this.relBase = relBase
     }
 
