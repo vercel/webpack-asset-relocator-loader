@@ -1,0 +1,5 @@
+{
+  "name": "fake-binding2",
+  "version": "1.0.0",
+  "description": "Fake binding that contains just enough for node-gyp-build to be able to resolve it (the .node file is a dummy empty file and cannot actually be imported)"
+}
