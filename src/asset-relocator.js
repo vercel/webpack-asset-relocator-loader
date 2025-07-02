@@ -339,7 +339,7 @@ function injectPathHook (compilation, outputAssetBase) {
     }
 
     generate() {
-      const requireBase = `${esm ? "new URL('', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
+      const requireBase = `${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
 
       return `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`
     }

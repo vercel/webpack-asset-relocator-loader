@@ -37,7 +37,7 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs");
 /************************************************************************/
 /******/ /* webpack/runtime/asset-relocator-loader */
 /******/ (() => {
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
 /******/ })();
 /******/ 
 /************************************************************************/
