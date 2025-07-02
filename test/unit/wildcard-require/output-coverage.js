@@ -1,14 +1,14 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 284:
+/***/ 995:
 /***/ ((module) => {
 
 module.exports = 'module1';
 
 /***/ }),
 
-/***/ 583:
+/***/ 137:
 /***/ ((module) => {
 
 module.exports = 'module2';
@@ -16,7 +16,7 @@ module.exports = 'module2';
 
 /***/ }),
 
-/***/ 997:
+/***/ 495:
 /***/ ((module) => {
 
 module.exports = 'module3';
@@ -61,9 +61,9 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 function __ncc_wildcard$0 (arg) {
-  if (arg === "1.js" || arg === "1") return __webpack_require__(284);
-  else if (arg === "2.js" || arg === "2") return __webpack_require__(583);
-  else if (arg === "3.js" || arg === "3") return __webpack_require__(997);
+  if (arg === "1.js" || arg === "1") return __webpack_require__(995);
+  else if (arg === "2.js" || arg === "2") return __webpack_require__(137);
+  else if (arg === "3.js" || arg === "3") return __webpack_require__(495);
 }
 const num = Math.ceil(Math.random() * 3, 0);
 
