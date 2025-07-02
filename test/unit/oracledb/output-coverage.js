@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 71:
+/***/ 745:
 /***/ ((module) => {
 
 module.exports = 'oracledb';
@@ -52,7 +52,7 @@ var binaryLocations = [
 
 for (var i = 0; i < binaryLocations.length; i++) {
   try {
-    oracledbCLib = __webpack_require__(71);
+    oracledbCLib = __webpack_require__(745);
     break;
   } catch(err) {
     if (err.code !== 'MODULE_NOT_FOUND' || i == binaryLocations.length - 1) {

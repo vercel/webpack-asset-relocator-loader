@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 946:
+/***/ 896:
 /***/ ((module) => {
 
 module.exports = 'dep';
@@ -57,7 +57,7 @@ const reaction = name => {
 
 const reactions = {
 	repository: {
-		publicized: reaction$$mod(__webpack_require__(946), './dep')
+		publicized: reaction$$mod(__webpack_require__(896), './dep')
 	}
 };
 
