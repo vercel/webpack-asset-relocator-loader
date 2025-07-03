@@ -343,6 +343,10 @@ function injectPathHook (compilation, outputAssetBase) {
 
       return `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`
     }
+
+    shouldIsolate() {
+      return false;
+    }
   }
 
   compilation.hooks.runtimeRequirementInTree

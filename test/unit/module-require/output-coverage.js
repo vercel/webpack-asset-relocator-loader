@@ -44,9 +44,7 @@ if (true)
 /******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/asset-relocator-loader */
-/******/ 	(() => {
-/******/ 		if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
-/******/ 	})();
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
 /******/ 	
