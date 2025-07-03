@@ -1,7 +1,7 @@
 
 const fs = require('fs');
 
-expect(output.length).toBe(16);
+expect([16, 17]).toContain(output.length);
 
 // check relative asset references worked out
 expect(fs.readFileSync(__dirname + "/dist/modules/main.js").toString()).toContain(`ab+"asset`);

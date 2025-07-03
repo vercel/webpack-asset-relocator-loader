@@ -44,9 +44,8 @@ module.exports = require("path");
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -115,7 +114,7 @@ var __webpack_exports__ = {};
   function(e, t, r) {
     const n = __webpack_require__(147),
       o = __webpack_require__(17);
-    console.log(n.readFileSync(__nccwpck_require__.ab + "asset.txt"));
+    console.log(n.readFileSync(__webpack_require__.ab + "asset.txt"));
   }
 ]);
 })();
