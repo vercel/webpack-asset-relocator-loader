@@ -1,0 +1,7 @@
+{
+  "name": "project-chunking",
+  "devDependencies": {
+    "sharp": "0.34.2",
+    "sharp32": "npm:sharp@0.32.6"
+  }
+}
