@@ -31,7 +31,7 @@
     "loader-utils": "^1.2.3",
     "magic-string": "^0.25.1",
     "memory-fs": "^0.4.1",
-    "node-gyp-build": "^4.2.1",
+    "node-gyp-build": "^4.8.4",
     "node-pre-gyp": "^0.12.0",
     "resolve-from": "3.0.0",
     "rollup-pluginutils": "^2.8.2",
