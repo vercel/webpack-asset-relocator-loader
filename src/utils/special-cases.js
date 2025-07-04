@@ -31,6 +31,7 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
     const file = path.resolve(id, '..', '..', 'package.json');
     const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
 
+    // there aren't optional dependencies for sharp v0.32.x
     for (const dep of Object.keys(pkg.optionalDependencies || {})) {
       const dir = path.resolve(id, '..', '..', '..', dep);
       if (!fs.existsSync(dir)) continue;
@@ -40,13 +41,17 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
       const file = path.resolve(dir, 'package.json');
       const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-      const regex = /`@img\/sharp-\${runtimePlatform}\/sharp\.node`/;
-      const match = regex.exec(magicString.toString());
-      if (!match) return { transformed: false };
+      // patch the path only when package contains sharp-*.node
+      if (!dep.startsWith('@img/sharp-libvips-')) {
+        const regex = /`@img\/sharp-\${runtimePlatform}\/sharp\.node`/;
+        const match = regex.exec(magicString.toString());
+        if (!match) return { transformed: false };
 
-      const runtimePlatform = `${pkg.os}-${pkg.cpu}`;
-      magicString.overwrite(match.index, match.index + match[0].length, `${emission} + '/lib/sharp-${runtimePlatform}.node'`);
+        const runtimePlatform = `${pkg.os}-${pkg.cpu}`;
+        magicString.overwrite(match.index, match.index + match[0].length, `${emission} + '/lib/sharp-${runtimePlatform}.node'`);
+      }
 
+      // relocate nested sharp-libvips-* packages, but their import locations are unknown
       try {
         for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
           const innerDir = path.resolve(fs.realpathSync(dir), '..', '..', innerDep);
