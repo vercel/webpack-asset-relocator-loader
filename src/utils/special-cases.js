@@ -4,6 +4,8 @@ const fs = require('fs');
 const handleWrappers = require('./wrappers.js');
 
 module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAssetDirectory }) {
+  id = id.replaceAll(/\\/g, '/');
+
   let transformed;
   ({ transformed, ast, scope } = handleWrappers(ast, scope, magicString));
   if (transformed)
@@ -25,8 +27,41 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
         }
       }
     }
-  }
-  else if (id.endsWith('socket.io/lib/index.js') || global._unit && id.includes('socket.io')) {
+  } else if (id.endsWith('sharp/lib/sharp.js')) {
+    const file = path.resolve(id, '..', '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+    for (const dep of Object.keys(pkg.optionalDependencies || {})) {
+      const dir = path.resolve(id, '..', '..', '..', dep);
+      if (!fs.existsSync(dir)) continue;
+
+      const emission = emitAssetDirectory(dir);
+
+      const file = path.resolve(dir, 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+      const regex = /`@img\/sharp-\${runtimePlatform}\/sharp\.node`/;
+      const match = regex.exec(magicString.toString());
+      if (!match) return { transformed: false };
+
+      const runtimePlatform = `${pkg.os}-${pkg.cpu}`;
+      magicString.overwrite(match.index, match.index + match[0].length, `${emission} + '/lib/sharp-${runtimePlatform}.node'`);
+
+      try {
+        for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
+          const innerDir = path.resolve(fs.realpathSync(dir), '..', '..', innerDep);
+          emitAssetDirectory(innerDir);
+        }
+      } catch (err) {
+        if (err && err.code !== 'ENOENT') {
+          console.error(`Error reading 'sharp' dependencies from '${dir}/package.json'`);
+          throw err;
+        }
+      }
+    }
+
+    return { transformed: true };
+  } else if (id.endsWith('socket.io/lib/index.js') || global._unit && id.includes('socket.io')) {
     function replaceResolvePathStatement (statement) {
       if (statement.type === 'ExpressionStatement' &&
           statement.expression.type === 'AssignmentExpression' &&

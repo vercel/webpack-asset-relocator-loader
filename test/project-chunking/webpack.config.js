@@ -14,11 +14,25 @@ module.exports = {
   externals: ['fs'],
   module: {
     rules: [{
-      test: /\.m?js$/,
+      test: /\.(m?js|node)$/,
       parser: { amd: false },
       use: {
         loader: __dirname + '/../../src/asset-relocator.js'
       }
     }]
+  },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        sharp: {
+          test: /[\\/]node_modules[\\/]sharp[\\/]/,
+          name: 'sharp-chunk',
+        },
+        sharp32: {
+          test: /[\\/]node_modules[\\/]sharp32[\\/]/,
+          name: 'sharp32-chunk',
+        }
+      }
+    }
   }
 };
