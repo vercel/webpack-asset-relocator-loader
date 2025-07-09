@@ -41,7 +41,8 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
       const file = path.resolve(dir, 'package.json');
       const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-      // patch the path only when package contains sharp-*.node
+      // patch the path only when the package contains sharp-*.node
+      // sharp-libvips-* packages are relocation-only
       if (!dep.startsWith('@img/sharp-libvips-')) {
         const regex = /`@img\/sharp-\${runtimePlatform}\/sharp\.node`/;
         const match = regex.exec(magicString.toString());
@@ -49,19 +50,6 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
 
         const runtimePlatform = `${pkg.os}-${pkg.cpu}`;
         magicString.overwrite(match.index, match.index + match[0].length, `${emission} + '/lib/sharp-${runtimePlatform}.node'`);
-      }
-
-      // relocate nested sharp-libvips-* packages, but their import locations are unknown
-      try {
-        for (const innerDep of Object.keys(pkg.optionalDependencies || {})) {
-          const innerDir = path.resolve(fs.realpathSync(dir), '..', '..', innerDep);
-          emitAssetDirectory(innerDir);
-        }
-      } catch (err) {
-        if (err && err.code !== 'ENOENT') {
-          console.error(`Error reading 'sharp' dependencies from '${dir}/package.json'`);
-          throw err;
-        }
       }
     }
 
