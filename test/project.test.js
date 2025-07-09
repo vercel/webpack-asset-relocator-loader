@@ -1,18 +1,26 @@
 const fs = require("fs");
 const { join } = require("path");
-const { execSync } = require("child_process");
+const webpack = require("webpack");
 
 for (const project of fs.readdirSync(__dirname).filter(name => name.startsWith("project-"))) {
-  it(`should correctly run webpack build ${project}`, async () => { 
-    const webpack = join(__dirname, '..', 'node_modules', '.bin', 'webpack');
-    const cwd = join(__dirname, project);
-    const command = `${webpack} -c webpack.config.js`;
-    const stdout = execSync(command, { cwd });
+  const config = require(join(__dirname, project, 'webpack.config.js'));
 
-    const output = stdout.toString().split("\n");
-    ((output, __dirname) => {
-      output;
+  it(`should correctly run webpack build ${project}`, async () => {
+    const cwd = join(__dirname, project);
+    process.chdir(cwd);
+
+    const compiler = webpack(config);
+
+    const stats = await new Promise((resolve, reject) => {
+      compiler.run((err, stats) => {
+        if (err) return reject(err);
+        resolve(stats);
+      });
+    });
+
+    ((stats, __dirname) => {
+      stats;
       eval(fs.readFileSync(join(__dirname, 'expected.js')).toString());
-    })(output, cwd);
-  });
+    })(stats, cwd);
+  }, 10000);
 }
