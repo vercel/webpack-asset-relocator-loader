@@ -1,13 +1,15 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ([
-/* 0 */
+/******/ 	var __webpack_modules__ = ({
+
+/***/ 372:
 /***/ ((module) => {
 
 module.exports = 'dep';
 
 
 /***/ })
-/******/ 	]);
+
+/******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -53,7 +55,7 @@ const reaction = (name) => {
 
 const reactions = {
 	repository: {
-		publicized: reaction$$mod(__webpack_require__(0), './dep')
+		publicized: reaction$$mod(__webpack_require__(372), './dep')
 	}
 };
 

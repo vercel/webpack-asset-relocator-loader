@@ -1,5 +1,4 @@
 node_modules
-dist
 coverage
 test/**/dist
 test/unit/**/actual.js
