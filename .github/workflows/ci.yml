@@ -27,6 +27,9 @@ jobs:
         run: node --version
       - name: Install Dependencies
         run: yarn install
+      - name: Install Test Dependencies
+        run: yarn install
+        working-directory: test/project-chunking
       - name: Run Tests
         run: yarn test
       # - name: Run yarn pnp tests

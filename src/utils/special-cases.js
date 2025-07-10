@@ -4,6 +4,8 @@ const fs = require('fs');
 const handleWrappers = require('./wrappers.js');
 
 module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAssetDirectory }) {
+  id = id.replaceAll(/\\/g, '/');
+
   let transformed;
   ({ transformed, ast, scope } = handleWrappers(ast, scope, magicString));
   if (transformed)
@@ -25,8 +27,34 @@ module.exports = function ({ id, code, pkgBase, ast, scope, magicString, emitAss
         }
       }
     }
-  }
-  else if (id.endsWith('socket.io/lib/index.js') || global._unit && id.includes('socket.io')) {
+  } else if (id.endsWith('sharp/lib/sharp.js')) {
+    const file = path.resolve(id, '..', '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+    // there aren't optional dependencies for sharp v0.32.x
+    for (const dep of Object.keys(pkg.optionalDependencies || {})) {
+      const dir = path.resolve(id, '..', '..', '..', dep);
+      if (!fs.existsSync(dir)) continue;
+
+      const emission = emitAssetDirectory(dir);
+
+      const file = path.resolve(dir, 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+      // patch the path only when the package contains sharp-*.node
+      // sharp-libvips-* packages are relocation-only
+      if (!dep.startsWith('@img/sharp-libvips-')) {
+        const regex = /`@img\/sharp-\${runtimePlatform}\/sharp\.node`/;
+        const match = regex.exec(magicString.toString());
+        if (!match) return { transformed: false };
+
+        const runtimePlatform = `${pkg.os}-${pkg.cpu}`;
+        magicString.overwrite(match.index, match.index + match[0].length, `${emission} + '/lib/sharp-${runtimePlatform}.node'`);
+      }
+    }
+
+    return { transformed: true };
+  } else if (id.endsWith('socket.io/lib/index.js') || global._unit && id.includes('socket.io')) {
     function replaceResolvePathStatement (statement) {
       if (statement.type === 'ExpressionStatement' &&
           statement.expression.type === 'AssignmentExpression' &&

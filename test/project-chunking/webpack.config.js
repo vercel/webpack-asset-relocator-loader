@@ -3,22 +3,42 @@ module.exports = {
   mode: 'production',
   entry: {
     main: './main.js',
-    chunk: './chunk.js'
+    chunk: './chunk.js',
+    sharp: './packages/sharp.js',
+    sharp32: './packages/sharp32.js'
   },
   output: {
     clean: true,
-    filename: 'modules/[name].js',
-    chunkFilename: 'modules/chunks/[name].js',
+    filename: '[name].js',
+    chunkFilename: 'chunks/[name].js',
     path: __dirname + '/dist'
   },
-  externals: ['fs'],
   module: {
     rules: [{
-      test: /\.m?js$/,
+      test: /\.(m?js|node)$/,
       parser: { amd: false },
       use: {
-        loader: __dirname + '/../../src/asset-relocator.js'
+        loader: __dirname + '/../../src/asset-relocator.js',
+        options: {
+          outputAssetBase: 'assets'
+        }
       }
     }]
+  },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        sharp: {
+          test: /[\\/]node_modules[\\/]sharp[\\/]/,
+          name: 'chunks/sharp-chunk',
+          chunks: 'all',
+        },
+        sharp32: {
+          test: /[\\/]node_modules[\\/]sharp32[\\/]/,
+          name: 'chunks/sharp32-chunk',
+          chunks: 'all',
+        }
+      }
+    }
   }
 };
