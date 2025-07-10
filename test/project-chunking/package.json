@@ -1,6 +1,8 @@
 {
   "name": "project-chunking",
   "devDependencies": {
+    "bcrypt": "6.0.0",
+    "bcrypt5": "npm:bcrypt@5.1.1",
     "sharp": "0.34.2",
     "sharp32": "npm:sharp@0.32.6"
   }
