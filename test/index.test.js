@@ -7,7 +7,7 @@ jest.setTimeout(20000);
 
 global._unit = true;
 
-const relocateLoader = require(__dirname +  "/../");
+const relocateLoader = require(__dirname + "/../");
 const plugins = [{
   apply(compiler) {
     compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation));
