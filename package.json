@@ -6,8 +6,7 @@
   "license": "MIT",
   "main": "./src/asset-relocator.js",
   "scripts": {
-    "build": "node ./scripts/build.js",
-    "test": "yarn run build && jest",
+    "test": "jest",
     "test-pnp": "yarn pack -f test/yarn-pnp/assets-plugin-tarball.tgz && cd test/yarn-pnp && echo '' > yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install && yarn run build && yarn run test",
     "test-coverage": "jest --coverage --globals \"{\\\"coverage\\\":true}\""
   },

@@ -18,7 +18,7 @@ module.exports = {
       test: /\.(m?js|node)$/,
       parser: { amd: false },
       use: {
-        loader: __dirname + '/../../src/asset-relocator.js',
+        loader: __dirname + '/../../',
         options: {
           outputAssetBase: 'assets'
         }

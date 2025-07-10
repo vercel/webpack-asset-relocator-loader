@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 569:
+/***/ 393:
 /***/ ((module) => {
 
 module.exports = 'connection';
@@ -45,7 +45,7 @@ var __webpack_exports__ = {};
 (() => {
 const driver = global.MONGOOSE_DRIVER_PATH || './dir';
 
-const Connection = __webpack_require__(569);
+const Connection = __webpack_require__(393);
 })();
 
 module.exports = __webpack_exports__;
