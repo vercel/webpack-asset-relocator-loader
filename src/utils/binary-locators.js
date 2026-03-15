@@ -2,8 +2,8 @@ const path = require("path");
 const fs = require("fs");
 
 // pregyp
-const versioning = require("node-pre-gyp/lib/util/versioning.js");
-const napi = require("node-pre-gyp/lib/util/napi.js");
+const versioning = require("@mapbox/node-pre-gyp/lib/util/versioning.js");
+const napi = require("@mapbox/node-pre-gyp/lib/util/napi.js");
 const pregypFind = (package_json_path, opts) => {
   const package_json = JSON.parse(fs.readFileSync(package_json_path).toString());
   versioning.validate_config(package_json, opts);

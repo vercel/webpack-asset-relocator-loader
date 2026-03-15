@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 569:
+/***/ 393:
 /***/ ((module) => {
 
 module.exports = 'connection';
@@ -36,15 +36,16 @@ module.exports = 'connection';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 const driver = global.MONGOOSE_DRIVER_PATH || './dir';
 
-const Connection = __webpack_require__(569);
+const Connection = __webpack_require__(393);
 })();
 
 module.exports = __webpack_exports__;

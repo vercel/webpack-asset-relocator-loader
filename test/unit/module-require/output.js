@@ -1,14 +1,14 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 543:
+/***/ 222:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 function x (module) {
 }
 
 exports.asdf = 'asdf';
-console.log(__webpack_require__(543));
+console.log(__webpack_require__(222));
 
 if (true)
   console.log("yes");
@@ -43,14 +43,15 @@ if (true)
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/************************************************************************/
 /******/ 	
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(543);
+/******/ 	var __webpack_exports__ = __webpack_require__(222);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

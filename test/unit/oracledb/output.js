@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 71:
+/***/ 745:
 /***/ ((module) => {
 
 module.exports = 'oracledb';
@@ -35,9 +35,10 @@ module.exports = 'oracledb';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
@@ -49,7 +50,7 @@ var binaryLocations = [
 
 for (var i = 0; i < binaryLocations.length; i++) {
   try {
-    oracledbCLib = __webpack_require__(71);
+    oracledbCLib = __webpack_require__(745);
     break;
   } catch(err) {
     if (err.code !== 'MODULE_NOT_FOUND' || i == binaryLocations.length - 1) {

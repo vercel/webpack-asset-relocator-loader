@@ -14,7 +14,7 @@ const getPackageScope = require('./utils/get-package-scope');
 const { pregyp, nbind } = require('./utils/binary-locators');
 const handleSpecialCases = require('./utils/special-cases');
 const { getOptions } = require("loader-utils");
-const resolve = require('resolve');
+const resolve = require('resolve'); //resolve should be external to be patched by yarn
 const mergeSourceMaps = require('./utils/merge-source-maps');
 const os = require('os');
 const nodeGypBuild = require('node-gyp-build');
@@ -204,6 +204,7 @@ const staticModules = Object.assign(Object.create(null), {
     default: os,
     ...os
   },
+  'node:path': undefined, // point to the same reference as "path" below
   'node-pre-gyp': pregyp,
   'node-pre-gyp/lib/pre-binding': pregyp,
   'node-pre-gyp/lib/pre-binding.js': pregyp,
@@ -223,6 +224,8 @@ const staticModules = Object.assign(Object.create(null), {
     default: RESOLVE_FROM
   }
 });
+staticModules["node:path"] = staticModules.path;
+
 const globalBindings = {
   MONGOOSE_DRIVER_PATH: undefined,
   URL: URL
@@ -285,17 +288,21 @@ const BOUND_REQUIRE = Symbol();
 
 function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlocks, log) {
   const wildcardBlockIndex = wildcardBlocks.length;
-  const trailingWildcard = wildcardPath.endsWith(WILDCARD);
 
-  const wildcardIndex = wildcardPath.indexOf(WILDCARD);
+  const wildcardPathNormalized = wildcardPath.split(path.sep).join(path.posix.sep)
+  const dirNormalized = dir.split(path.sep).join(path.posix.sep)
 
-  const wildcardPrefix = wildcardPath.substr(0, wildcardIndex);
-  const wildcardSuffix = wildcardPath.substr(wildcardIndex + 1);
+  const trailingWildcard = wildcardPathNormalized.endsWith(WILDCARD);
+
+  const wildcardIndex = wildcardPathNormalized.indexOf(WILDCARD);
+
+  const wildcardPrefix = wildcardPathNormalized.substr(0, wildcardIndex);
+  const wildcardSuffix = wildcardPathNormalized.substr(wildcardIndex + 1);
   const endPattern = wildcardSuffix ? '?(.@(js|json|node))' : '.@(js|json|node)';
 
   // sync to support no emission case
   if (log)
-    console.log('Generating wildcard requires for ' + wildcardPath.replace(WILDCARD, '*'));
+    console.log('Generating wildcard requires for ' + wildcardPathNormalized.replace(WILDCARD, '*'));
   let options = glob.sync(wildcardPrefix + '**' + wildcardSuffix + endPattern, { mark: true, ignore: 'node_modules/**/*' });
 
   if (!options.length)
@@ -303,7 +310,7 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
 
   const optionConditions = options.map((file, index) => {
     const arg = JSON.stringify(file.substring(wildcardPrefix.length, file.lastIndexOf(wildcardSuffix)));
-    let relPath = path.relative(dir, file).replace(/\\/g, '/');
+    let relPath = path.posix.relative(dirNormalized, file);
     if (!relPath.startsWith('../'))
       relPath = './' + relPath;
     let condition = index === 0 ? '  ' : '  else ';
@@ -323,23 +330,49 @@ function generateWildcardRequire(dir, wildcardPath, wildcardParam, wildcardBlock
   return `__ncc_wildcard$${wildcardBlockIndex}(${wildcardParam})`;
 }
 
-const hooked = new WeakSet();
 function injectPathHook (compilation, outputAssetBase) {
   const esm = compilation.outputOptions.module;
-  const { mainTemplate } = compilation;
-  if (!hooked.has(mainTemplate)) {
-    hooked.add(mainTemplate);
+  const { RuntimeModule, RuntimeGlobals } = compilation.compiler.webpack
 
-    mainTemplate.hooks.requireExtensions.tap("asset-relocator-loader", (source, chunk) => {
+  class AssetRelocatorLoaderRuntimeModule extends RuntimeModule {
+    constructor({ relBase }) {
+      super('asset-relocator-loader');
+
+      this.relBase = relBase
+    }
+
+    generate() {
+      const requireBase = `${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
+
+      return `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`
+    }
+
+    shouldIsolate() {
+      return false;
+    }
+  }
+
+  compilation.hooks.runtimeRequirementInTree
+    .for(RuntimeGlobals.require)
+    .tap('asset-relocator-loader', (chunk) => {
       let relBase = '';
+
       if (chunk.name) {
         relBase = path.relative(path.dirname(chunk.name), '.').replace(/\\/g, '/');
-        if (relBase.length)
+
+        if (relBase.length) {
           relBase = '/' + relBase;
+        }
       }
-      return `${source}\nif (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(relBase + '/' + assetBase(outputAssetBase))};`;
-    });
-  }
+
+      try {
+        compilation.addRuntimeModule(chunk, new AssetRelocatorLoaderRuntimeModule({ relBase }));
+      } catch (error) {
+        console.error(error);
+      }
+
+      return true;
+  });
 }
 
 module.exports = async function (content, map) {
@@ -513,7 +546,7 @@ module.exports = async function (content, map) {
           assetExpressions += " + " + code.substring(wildcard.start, wildcard.end);
       }
       if (curPattern.length) {
-        assetExpressions += " + \'" + JSON.stringify(curPattern).replace(/\\/g, '/').slice(1, -1) + "'";
+        assetExpressions += " + \'" + JSON.stringify(curPattern.replace(/\\/g, '/')).slice(1, -1) + "'";
       }
     }
     return "__webpack_require__.ab + " + JSON.stringify((name + firstPrefix).replace(/\\/g, '/')) + assetExpressions;
@@ -901,7 +934,7 @@ module.exports = async function (content, map) {
             break;
             // require('bindings')(...)
             case BINDINGS:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   let staticBindingsInstance = false;
@@ -930,19 +963,21 @@ module.exports = async function (content, map) {
               }
             break;
             case NODE_GYP_BUILD:
-              if (node.arguments.length === 1 && node.arguments[0].type === 'Identifier' &&
-                  node.arguments[0].name === '__dirname' && knownBindings.__dirname.shadowDepth === 0) {
-                transformed = true;
-                let resolved;
-                try {
-                  resolved = nodeGypBuild.path(dir);
-                }
-                catch (e) {}
-                if (resolved) {
-                  staticChildValue = { value: resolved };
-                  staticChildNode = node;
-                  emitStaticChildAsset(path);
-                  return backtrack(this, parent);
+              if (node.arguments.length > 0) {
+                const arg = computePureStaticValue(node.arguments[0], false).result;
+                if (arg && arg.value) {
+                  transformed = true;
+                  let resolved;
+                  try {
+                    resolved = nodeGypBuild.path(arg.value);
+                  }
+                  catch (e) {}
+                  if (resolved) {
+                    staticChildValue = { value: resolved };
+                    staticChildNode = node;
+                    emitStaticChildAsset(path);
+                    return backtrack(this, parent);
+                  }
                 }
               }
             break;
@@ -957,7 +992,7 @@ module.exports = async function (content, map) {
             break;
             // nbind.init(...) -> require('./resolved.node')
             case NBIND_INIT:
-              if (node.arguments.length) {
+              if (node.arguments.length > 0) {
                 const arg = computePureStaticValue(node.arguments[0], false).result;
                 if (arg && arg.value) {
                   const bindingInfo = nbind(arg.value);

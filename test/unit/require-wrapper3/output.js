@@ -1,13 +1,15 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ([
-/* 0 */
+/******/ 	var __webpack_modules__ = ({
+
+/***/ 372:
 /***/ ((module) => {
 
 module.exports = 'dep';
 
 
 /***/ })
-/******/ 	]);
+
+/******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -34,9 +36,10 @@ module.exports = 'dep';
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat */
+/******/ 	/* webpack/runtime/asset-relocator-loader */
+/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";
 /******/ 	
-/******/ 	if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = __dirname + "/";/************************************************************************/
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
@@ -52,7 +55,7 @@ const reaction = (name) => {
 
 const reactions = {
 	repository: {
-		publicized: reaction$$mod(__webpack_require__(0), './dep')
+		publicized: reaction$$mod(__webpack_require__(372), './dep')
 	}
 };
 

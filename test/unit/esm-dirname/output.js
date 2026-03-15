@@ -1,10 +1,10 @@
+import { createRequire as __WEBPACK_EXTERNAL_createRequire } from "module";
 /******/ var __webpack_modules__ = ({
 
-/***/ 747:
+/***/ 147:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("fs");;
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs");
 
 /***/ })
 
@@ -35,13 +35,14 @@ module.exports = require("fs");;
 /******/ }
 /******/ 
 /************************************************************************/
-/******/ /* webpack/runtime/compat */
+/******/ /* webpack/runtime/asset-relocator-loader */
+/******/ if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
 /******/ 
-/******/ if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";/************************************************************************/
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const fs = __webpack_require__(747);
+const fs = __webpack_require__(147);
 console.log(fs.readdirSync(__webpack_require__.ab + "esm-dirname"));
 
 })();

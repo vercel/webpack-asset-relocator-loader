@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "scripts": {
+        "build": "rm -rf dist && webpack",
+        "test": "node test.js"
+    },
+    "dependencies": {
+        "lodash": "^4.0.0"
+    },
+    "devDependencies": {
+        "@vercel/webpack-asset-relocator-loader": "file:./assets-plugin-tarball.tgz",
+        "webpack": "^5",
+        "webpack-cli": "^4"
+    },
+    "packageManager": "yarn@3.2.1"
+}

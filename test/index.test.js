@@ -7,7 +7,7 @@ jest.setTimeout(20000);
 
 global._unit = true;
 
-const relocateLoader = require(__dirname + (global.coverage ? "/../src/asset-relocator" : "/../"));
+const relocateLoader = require(__dirname + "/../");
 const plugins = [{
   apply(compiler) {
     compiler.hooks.compilation.tap("relocate-loader", compilation => relocateLoader.initAssetCache(compilation));
@@ -16,8 +16,6 @@ const plugins = [{
 
 for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
   it(`should generate correct output for ${unitTest}`, async () => {
-    if (!unitTest.startsWith('esm-'))
-      return;
     // simple error test
     let shouldError = false;
     if (unitTest.endsWith('-err'))
@@ -37,7 +35,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
 
     const mfs = new MemoryFS();
     const compiler = webpack({
-      experiments: { 
+      experiments: {
         topLevelAwait: true,
         outputModule: unitTest.startsWith('esm-')
       },
@@ -57,7 +55,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
           test: /\.(js|mjs|node)$/,
           parser: { amd: false },
           use: [{
-            loader: __dirname + (global.coverage ? "/../src/asset-relocator" : "/../"),
+            loader: __dirname + "/../",
             options: {
               existingAssetNames: ['existing.txt'],
               filterAssetBase: path.resolve('test'),
@@ -81,7 +79,7 @@ for (const unitTest of fs.readdirSync(`${__dirname}/unit`)) {
       plugins
     });
     compiler.outputFileSystem = mfs;
-  
+
     try {
       var stats = await new Promise((resolve, reject) => {
         compiler.run((err, stats) => {
