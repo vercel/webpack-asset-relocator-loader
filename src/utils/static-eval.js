@@ -1,4 +1,4 @@
-module.exports = function (ast, vars = {}, computeBranches = true) {
+﻿module.exports = function (ast, vars = {}, computeBranches = true) {
   const state = {
     computeBranches,
     sawIdentifier: false,
@@ -55,6 +55,11 @@ const visitors = {
     let r = walk(node.right);
 
     if (!l && !r) return;
+
+    // Guard against BigInt mixing — mixing BigInt with other types in arithmetic
+    // throws TypeError at runtime, so skip static evaluation when BigInt is involved.
+    if (l && 'value' in l && typeof l.value === 'bigint') return;
+    if (r && 'value' in r && typeof r.value === 'bigint') return;
 
     if (!l) {
       // UNKNOWN + 'str' -> wildcard string value
@@ -251,6 +256,9 @@ const visitors = {
   Literal (node) {
     return { value: node.value };
   },
+  BigIntLiteral (node) {
+    return { value: node.value };
+  },
   MemberExpression (node, walk) {
     const obj = walk(node.object);
     // do not allow access to methods on Function 
@@ -421,6 +429,8 @@ const visitors = {
   UnaryExpression (node, walk) {
     const val = walk(node.argument);
     if (!val)
+      return;
+    if ('value' in val && typeof val.value === 'bigint')
       return;
     if ('value' in val && 'wildcards' in val === false) {
       if (node.operator === '+') return { value: +val.value };
