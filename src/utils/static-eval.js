@@ -78,73 +78,82 @@ const visitors = {
     if ('test' in l && 'test' in r)
       return;
 
-    if ('test' in l) {
-      r = r.value;
-      if (op === '==') return { test: l.test, then: l.then == r, else: l.else == r };
-      if (op === '===') return { test: l.test, then: l.then === r, else: l.else === r };
-      if (op === '!=') return { test: l.test, then: l.then != r, else: l.else != r };
-      if (op === '!==') return { test: l.test, then: l.then !== r, else: l.else !== r };
-      if (op === '+') return { test: l.test, then: l.then + r, else: l.else + r };
-      if (op === '-') return { test: l.test, then: l.then - r, else: l.else - r };
-      if (op === '*') return { test: l.test, then: l.then * r, else: l.else * r };
-      if (op === '/') return { test: l.test, then: l.then / r, else: l.else / r };
-      if (op === '%') return { test: l.test, then: l.then % r, else: l.else % r };
-      if (op === '<') return { test: l.test, then: l.then < r, else: l.else < r };
-      if (op === '<=') return { test: l.test, then: l.then <= r, else: l.else <= r };
-      if (op === '>') return { test: l.test, then: l.then > r, else: l.else > r };
-      if (op === '>=') return { test: l.test, then: l.then >= r, else: l.else >= r };
-      if (op === '|') return { test: l.test, then: l.then | r, else: l.else | r };
-      if (op === '&') return { test: l.test, then: l.then & r, else: l.else & r };
-      if (op === '^') return { test: l.test, then: l.then ^ r, else: l.else ^ r };
-      if (op === '&&') return { test: l.test, then: l.then && r, else: l.else && r };
-      if (op === '||') return { test: l.test, then: l.then || r, else: l.else || r };
-    }
-    else if ('test' in r) {
-      l = l.value;
-      if (op === '==') return { test: r.test, then: l == r.then, else: l == r.else };
-      if (op === '===') return { test: r.test, then: l === r.then, else: l === r.else };
-      if (op === '!=') return { test: r.test, then: l != r.then, else: l != r.else };
-      if (op === '!==') return { test: r.test, then: l !== r.then, else: l !== r.else };
-      if (op === '+') return { test: r.test, then: l + r.then, else: l + r.else };
-      if (op === '-') return { test: r.test, then: l - r.then, else: l - r.else };
-      if (op === '*') return { test: r.test, then: l * r.then, else: l * r.else };
-      if (op === '/') return { test: r.test, then: l / r.then, else: l / r.else };
-      if (op === '%') return { test: r.test, then: l % r.then, else: l % r.else };
-      if (op === '<') return { test: r.test, then: l < r.then, else: l < r.else };
-      if (op === '<=') return { test: r.test, then: l <= r.then, else: l <= r.else };
-      if (op === '>') return { test: r.test, then: l > r.then, else: l > r.else };
-      if (op === '>=') return { test: r.test, then: l >= r.then, else: l >= r.else };
-      if (op === '|') return { test: r.test, then: l | r.then, else: l | r.else };
-      if (op === '&') return { test: r.test, then: l & r.then, else: l & r.else };
-      if (op === '^') return { test: r.test, then: l ^ r.then, else: l ^ r.else };
-      if (op === '&&') return { test: r.test, then: l && r.then, else: l && r.else };
-      if (op === '||') return { test: r.test, then: l || r.then, else: l || r.else };
-    }
-    else {
-      if (op === '==') return { value: l.value == r.value };
-      if (op === '===') return { value: l.value === r.value };
-      if (op === '!=') return { value: l.value != r.value };
-      if (op === '!==') return { value: l.value !== r.value };
-      if (op === '+') {
-        const val = { value: l.value + r.value };
-        if (l.wildcards || r.wildcards)
-          val.wildcards = [...l.wildcards || [], ...r.wildcards || []];
-        return val;
+    // Evaluation can throw for known values, e.g. mixing a BigInt
+    // operand with another type ("Cannot mix BigInt and other types").
+    // Any such error just means the expression is not statically
+    // computable.
+    try {
+      if ('test' in l) {
+        r = r.value;
+        if (op === '==') return { test: l.test, then: l.then == r, else: l.else == r };
+        if (op === '===') return { test: l.test, then: l.then === r, else: l.else === r };
+        if (op === '!=') return { test: l.test, then: l.then != r, else: l.else != r };
+        if (op === '!==') return { test: l.test, then: l.then !== r, else: l.else !== r };
+        if (op === '+') return { test: l.test, then: l.then + r, else: l.else + r };
+        if (op === '-') return { test: l.test, then: l.then - r, else: l.else - r };
+        if (op === '*') return { test: l.test, then: l.then * r, else: l.else * r };
+        if (op === '/') return { test: l.test, then: l.then / r, else: l.else / r };
+        if (op === '%') return { test: l.test, then: l.then % r, else: l.else % r };
+        if (op === '<') return { test: l.test, then: l.then < r, else: l.else < r };
+        if (op === '<=') return { test: l.test, then: l.then <= r, else: l.else <= r };
+        if (op === '>') return { test: l.test, then: l.then > r, else: l.else > r };
+        if (op === '>=') return { test: l.test, then: l.then >= r, else: l.else >= r };
+        if (op === '|') return { test: l.test, then: l.then | r, else: l.else | r };
+        if (op === '&') return { test: l.test, then: l.then & r, else: l.else & r };
+        if (op === '^') return { test: l.test, then: l.then ^ r, else: l.else ^ r };
+        if (op === '&&') return { test: l.test, then: l.then && r, else: l.else && r };
+        if (op === '||') return { test: l.test, then: l.then || r, else: l.else || r };
       }
-      if (op === '-') return { value: l.value - r.value };
-      if (op === '*') return { value: l.value * r.value };
-      if (op === '/') return { value: l.value / r.value };
-      if (op === '%') return { value: l.value % r.value };
-      if (op === '<') return { value: l.value < r.value };
-      if (op === '<=') return { value: l.value <= r.value };
-      if (op === '>') return { value: l.value > r.value };
-      if (op === '>=') return { value: l.value >= r.value };
-      if (op === '|') return { value: l.value | r.value };
-      if (op === '&') return { value: l.value & r.value };
-      if (op === '^') return { value: l.value ^ r.value };
-      if (op === '&&') return { value: l.value && r.value };
-      if (op === '||') return { value: l.value || r.value };
-    }      
+      else if ('test' in r) {
+        l = l.value;
+        if (op === '==') return { test: r.test, then: l == r.then, else: l == r.else };
+        if (op === '===') return { test: r.test, then: l === r.then, else: l === r.else };
+        if (op === '!=') return { test: r.test, then: l != r.then, else: l != r.else };
+        if (op === '!==') return { test: r.test, then: l !== r.then, else: l !== r.else };
+        if (op === '+') return { test: r.test, then: l + r.then, else: l + r.else };
+        if (op === '-') return { test: r.test, then: l - r.then, else: l - r.else };
+        if (op === '*') return { test: r.test, then: l * r.then, else: l * r.else };
+        if (op === '/') return { test: r.test, then: l / r.then, else: l / r.else };
+        if (op === '%') return { test: r.test, then: l % r.then, else: l % r.else };
+        if (op === '<') return { test: r.test, then: l < r.then, else: l < r.else };
+        if (op === '<=') return { test: r.test, then: l <= r.then, else: l <= r.else };
+        if (op === '>') return { test: r.test, then: l > r.then, else: l > r.else };
+        if (op === '>=') return { test: r.test, then: l >= r.then, else: l >= r.else };
+        if (op === '|') return { test: r.test, then: l | r.then, else: l | r.else };
+        if (op === '&') return { test: r.test, then: l & r.then, else: l & r.else };
+        if (op === '^') return { test: r.test, then: l ^ r.then, else: l ^ r.else };
+        if (op === '&&') return { test: r.test, then: l && r.then, else: l && r.else };
+        if (op === '||') return { test: r.test, then: l || r.then, else: l || r.else };
+      }
+      else {
+        if (op === '==') return { value: l.value == r.value };
+        if (op === '===') return { value: l.value === r.value };
+        if (op === '!=') return { value: l.value != r.value };
+        if (op === '!==') return { value: l.value !== r.value };
+        if (op === '+') {
+          const val = { value: l.value + r.value };
+          if (l.wildcards || r.wildcards)
+            val.wildcards = [...l.wildcards || [], ...r.wildcards || []];
+          return val;
+        }
+        if (op === '-') return { value: l.value - r.value };
+        if (op === '*') return { value: l.value * r.value };
+        if (op === '/') return { value: l.value / r.value };
+        if (op === '%') return { value: l.value % r.value };
+        if (op === '<') return { value: l.value < r.value };
+        if (op === '<=') return { value: l.value <= r.value };
+        if (op === '>') return { value: l.value > r.value };
+        if (op === '>=') return { value: l.value >= r.value };
+        if (op === '|') return { value: l.value | r.value };
+        if (op === '&') return { value: l.value & r.value };
+        if (op === '^') return { value: l.value ^ r.value };
+        if (op === '&&') return { value: l.value && r.value };
+        if (op === '||') return { value: l.value || r.value };
+      }
+    }
+    catch (e) {
+      return;
+    }
     return;
   },
   CallExpression (node, walk) {
@@ -422,17 +431,25 @@ const visitors = {
     const val = walk(node.argument);
     if (!val)
       return;
-    if ('value' in val && 'wildcards' in val === false) {
-      if (node.operator === '+') return { value: +val.value };
-      if (node.operator === '-') return { value: -val.value };
-      if (node.operator === '~') return { value: ~val.value };
-      if (node.operator === '!') return { value: !val.value };
+    // Evaluation can throw for known values, e.g. unary + on a BigInt
+    // ("Cannot convert a BigInt value to a number"). Any such error
+    // just means the expression is not statically computable.
+    try {
+      if ('value' in val && 'wildcards' in val === false) {
+        if (node.operator === '+') return { value: +val.value };
+        if (node.operator === '-') return { value: -val.value };
+        if (node.operator === '~') return { value: ~val.value };
+        if (node.operator === '!') return { value: !val.value };
+      }
+      else if ('test' in val && 'wildcards' in val === false) {
+        if (node.operator === '+') return { test: val.test, then: +val.then, else: +val.else };
+        if (node.operator === '-') return { test: val.test, then: -val.then, else: -val.else };
+        if (node.operator === '~') return { test: val.test, then: ~val.then, else: ~val.else };
+        if (node.operator === '!') return { test: val.test, then: !val.then, else: !val.else };
+      }
     }
-    else if ('test' in val && 'wildcards' in val === false) {
-      if (node.operator === '+') return { test: val.test, then: +val.then, else: +val.else };
-      if (node.operator === '-') return { test: val.test, then: -val.then, else: -val.else };
-      if (node.operator === '~') return { test: val.test, then: ~val.then, else: ~val.else };
-      if (node.operator === '!') return { test: val.test, then: !val.then, else: !val.else };
+    catch (e) {
+      return;
     }
     return;
   }
