@@ -2,7 +2,10 @@
   "name": "@vercel/webpack-asset-relocator-loader",
   "description": "Asset relocation loader used in ncc for performing Node.js builds while emitting and relocating any asset references.",
   "version": "0.0.0-development",
-  "repository": "vercel/webpack-asset-relocator-loader",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel/webpack-asset-relocator-loader.git"
+  },
   "license": "MIT",
   "main": "./src/asset-relocator.js",
   "scripts": {
