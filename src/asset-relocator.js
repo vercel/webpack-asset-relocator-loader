@@ -342,7 +342,10 @@ function injectPathHook (compilation, outputAssetBase) {
     }
 
     generate() {
-      const requireBase = `${esm ? "new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
+      // `new URL(...).pathname` is percent-encoded, so any output directory
+      // containing a space, a `~`, or a non-ASCII character would otherwise
+      // produce an asset base that does not exist on disk.
+      const requireBase = `${esm ? "decodeURIComponent(new URL('.', import.meta.url).pathname).slice(import.meta.url.match(/^file:\\/\\/\\/\\w:/) ? 1 : 0, -1)" : '__dirname'} + ${JSON.stringify(this.relBase + '/' + assetBase(outputAssetBase))}`;
 
       return `if (typeof __webpack_require__ !== 'undefined') __webpack_require__.ab = ${requireBase};`
     }

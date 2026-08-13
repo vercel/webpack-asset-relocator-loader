@@ -2,6 +2,11 @@ const fs = require("fs");
 const { join } = require("path");
 const webpack = require("webpack");
 
+// these tests chdir into each project, so restore the cwd afterwards to keep
+// the other suites in this process independent of the order jest runs them in
+const originalCwd = process.cwd();
+afterAll(() => process.chdir(originalCwd));
+
 for (const project of fs.readdirSync(__dirname).filter(name => name.startsWith("project-"))) {
   const config = require(join(__dirname, project, 'webpack.config.js'));
 
