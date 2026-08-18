@@ -2,7 +2,10 @@
   "name": "@vercel/webpack-asset-relocator-loader",
   "description": "Asset relocation loader used in ncc for performing Node.js builds while emitting and relocating any asset references.",
   "version": "0.0.0-development",
-  "repository": "vercel/webpack-asset-relocator-loader",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel/webpack-asset-relocator-loader.git"
+  },
   "license": "MIT",
   "main": "./src/asset-relocator.js",
   "scripts": {
@@ -13,6 +16,9 @@
   "files": [
     "src/*"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@mapbox/node-pre-gyp": "^2.0.0",
     "acorn": "^8.3.0",
@@ -35,7 +41,7 @@
     "@vercel/ncc": "^0.38.1",
     "jest": "^26.6.3",
     "memory-fs": "^0.4.1",
-    "semantic-release": "^17.3.0",
+    "semantic-release": "^25.0.9",
     "socket.io-client": "^2.2.0",
     "webpack": "^5",
     "webpack-cli": "^4"
