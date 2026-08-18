@@ -1208,7 +1208,7 @@ module.exports = async function (content, map) {
           }
         }
         // no static value -> see if we should emit the asset if it exists
-        emitStaticChildAsset();
+        emitStaticChildAsset(false, node);
       }
     }
   });
@@ -1305,7 +1305,17 @@ module.exports = async function (content, map) {
     return value instanceof URL ? fileURLToPath(value) : value.startsWith('file:') ? fileURLToPath(new URL(value)) : path.resolve(value);
   }
 
-  function emitStaticChildAsset (wrapRequire = false) {
+  function overwriteStaticChild (inlineString, staticParent) {
+    if (staticParent && staticParent.type === 'Property' && staticParent.shorthand && staticParent.value === staticChildNode) {
+      inlineString = code.substring(staticParent.key.start, staticParent.key.end) + ': ' + inlineString;
+      magicString.overwrite(staticParent.start, staticParent.end, inlineString);
+    }
+    else {
+      magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+    }
+  }
+
+  function emitStaticChildAsset (wrapRequire = false, staticParent) {
     if (isAbsolutePathOrUrl(staticChildValue.value)) {
       let resolved;
       try { resolved = resolveAbsolutePathOrUrl(staticChildValue.value); }
@@ -1318,7 +1328,7 @@ module.exports = async function (content, map) {
           // -> require(require('bindings')(...))
           if (wrapRequire)
             inlineString = '__non_webpack_require__(' + inlineString + ')';
-          magicString.overwrite(staticChildNode.start, staticChildNode.end, inlineString);
+          overwriteStaticChild(inlineString, staticParent);
           transformed = true;
         }
       }
@@ -1336,9 +1346,9 @@ module.exports = async function (content, map) {
         const thenInlineString = emitAsset(resolvedThen);
         const elseInlineString = emitAsset(resolvedElse);
         if (thenInlineString && elseInlineString) {
-          magicString.overwrite(
-            staticChildNode.start, staticChildNode.end,
-            `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`
+          overwriteStaticChild(
+            `${code.substring(staticChildValue.test.start, staticChildValue.test.end)} ? ${thenInlineString} : ${elseInlineString}`,
+            staticParent
           );
           transformed = true;
         }
